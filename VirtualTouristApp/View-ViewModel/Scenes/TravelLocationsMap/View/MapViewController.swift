@@ -1,11 +1,11 @@
 import UIKit
 import MapKit
-import AudioToolbox
 import CoreLocation
 
 class MapViewController: UIViewController {
 
     private lazy var viewModel: MapViewModelProtocol = MapViewModel(delegate: self)
+    private var vibration = Vibration()
 
     var pinsArray: [MKPointAnnotation] = []
 
@@ -24,19 +24,7 @@ class MapViewController: UIViewController {
     }
 
     func setupSavedZoomRegion() {
-        let region = viewModel.setupRegion()
-        mapView.setRegion(region, animated: true)
-    }
-
-    func centerViewInUserLocation(latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
-
-        
-//        let locationManager = CLLocationManager()
-//        let regionInMeters: Double = 10000
-//
-//        let userLocation = CLLocationCoordinate2D(latitude: UserAuthentication.Auth.latitude, longitude: UserAuthentication.Auth.longitude)
-//        let region = MKCoordinateRegion.init(center: userLocation, latitudinalMeters: regionInMeters, longitudinalMeters: regionInMeters)
-//        mapView.setRegion(region, animated: true)
+        let region = viewModel.setupRegion(in: mapView)
     }
 
     func setupTapGestureRecognizer() {
@@ -59,7 +47,7 @@ class MapViewController: UIViewController {
             trashImageView.isUserInteractionEnabled = true
         case .began:
             print("create a new pin")
-            feedbackVibration(.light)
+            vibration.feedbackVibration(.light)
             createNewPin(coordinate: coordinate)
             mapView.addAnnotations(pinsArray)
         case .changed where isItemDraggedToTrash(locationInView):
@@ -67,9 +55,9 @@ class MapViewController: UIViewController {
         case .ended:
             if isItemDraggedToTrash(locationInView) {
                 print("pinSelected \(pinSelected)")
-                let newPinsArray = pinsArray.filter { $0.title != pinSelected.first?.title }
+                let newPinsArray = pinsArray.filter { $0.subtitle != pinSelected.first?.subtitle }
                 mapView.removeAnnotations(pinSelected)
-                feedbackVibration(.heavy)
+                vibration.feedbackVibration(.heavy)
                 refreshMap(newPinsArray: newPinsArray)
             }
             trashImageView.isHidden = true
@@ -111,7 +99,7 @@ class MapViewController: UIViewController {
     func createNewPin(coordinate: CLLocationCoordinate2D) {
         let uuid = UUID().uuidString
         let newPin = MKPointAnnotation()
-        newPin.title = uuid
+        newPin.subtitle = uuid
         newPin.coordinate = CLLocationCoordinate2D(
             latitude: coordinate.latitude,
             longitude: coordinate.longitude
@@ -154,7 +142,7 @@ extension MapViewController: MKMapViewDelegate {
     }
 
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        feedbackVibration(.medium)
+        vibration.feedbackVibration(.medium)
         presentPhotoAlbumViewController()
         handleSelectedPin(pinAnnotation: view)
     }
@@ -169,6 +157,8 @@ extension MapViewController: MKMapViewDelegate {
         } else {
             annotationView?.annotation = annotation
         }
+
+        annotationView?.subtitleVisibility = .hidden
         return annotationView
     }
 }
@@ -178,38 +168,5 @@ extension MapViewController: MKMapViewDelegate {
 extension MapViewController: MapViewModelDelegate {
     func didLoad() {
         //
-    }
-}
-
-// MARK: - Feedback Vibrate
-
-extension MapViewController {
-
-    enum FeedbackVibration {
-        case light
-        case medium
-        case heavy
-        case soft
-        case rigid
-    }
-
-    func feedbackVibration(_ type: FeedbackVibration) {
-        switch type {
-        case .light:
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
-        case .medium:
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
-        case .heavy:
-            let generator = UIImpactFeedbackGenerator(style: .heavy)
-            generator.impactOccurred()
-        case .soft:
-            let generator = UIImpactFeedbackGenerator(style: .soft)
-            generator.impactOccurred()
-        case .rigid:
-            let generator = UIImpactFeedbackGenerator(style: .rigid)
-            generator.impactOccurred()
-        }
     }
 }
