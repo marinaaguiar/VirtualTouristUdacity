@@ -49,6 +49,27 @@ class PhotoAlbumViewController: UIViewController {
         activityIndicator.startAnimating()
         viewModel.loadMoreData()
     }
+
+    func setEmptyMessage(_ message: String) {
+        let messageLabel = UILabel(frame: CGRect(x: 0, y: 0, width: collectionView.bounds.width, height: collectionView.bounds.size.height))
+        messageLabel.text = message
+        messageLabel.textColor = .black
+        messageLabel.numberOfLines = 0
+        messageLabel.textAlignment = .center
+        messageLabel.font = UIFont(name: "SF", size: 15)
+        messageLabel.sizeToFit()
+        collectionView.backgroundView = messageLabel
+    }
+
+    func checkIfIsEmpty() {
+        if viewModel.imagesUrlString.isEmpty {
+            setEmptyMessage("There is no photos in the location")
+            seeMoreButton.isEnabled = false
+        } else {
+            seeMoreButton.isEnabled = true
+            setEmptyMessage("")
+        }
+    }
 }
 
 extension PhotoAlbumViewController: UICollectionViewDataSource {
@@ -56,7 +77,6 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return viewModel.imagesUrlString.count
     }
-
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CollectionViewCell", for: indexPath) as? CollectionViewCell else {
@@ -87,6 +107,7 @@ extension PhotoAlbumViewController: PhotoAlbumViewModelDelegate {
                 self.seeMoreButton.isHidden = false
                 self.collectionView.isScrollEnabled = true
                 self.collectionView.reloadData()
+                self.checkIfIsEmpty()
                 self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
             }
         }
