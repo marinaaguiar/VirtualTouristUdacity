@@ -4,10 +4,10 @@ import CoreData
 struct DataController {
 
     enum PersistentContainer: String {
-        case virtualTourist = "VirtualTourist"
+        case virtualTouristApp = "VirtualTouristApp"
     }
 
-    static let shared = Self.init(persistentContainer: .virtualTourist)
+    static let shared = Self.init(persistentContainer: .virtualTouristApp)
 
     private let persistentContainer: NSPersistentContainer
 

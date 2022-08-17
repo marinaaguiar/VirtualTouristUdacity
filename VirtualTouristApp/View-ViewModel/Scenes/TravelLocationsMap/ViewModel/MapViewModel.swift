@@ -6,8 +6,11 @@ protocol MapViewModelProtocol: AnyObject {
 
     func initializeCoreData()
     func saveUserZoomRegion(center: CLLocationCoordinate2D, span: MKCoordinateSpan)
+    func saveNewPin(id: String, location: CLLocationCoordinate2D) 
     func getStoredUserRegion() -> Region?
     func setupRegion(in mapView: MKMapView)
+    func getPins() -> [Pin]?
+    func deletePin(id: String)
 }
 
 protocol MapViewModelDelegate: AnyObject {
@@ -24,6 +27,7 @@ class MapViewModel: MapViewModelProtocol {
 
     init(delegate: MapViewModelDelegate?) {
         self.delegate = delegate
+        initializeCoreData()
     }
 
     func initializeCoreData() {
@@ -41,7 +45,7 @@ class MapViewModel: MapViewModelProtocol {
     func refreshItems() {
         let request: NSFetchRequest<Pin> = Pin.fetchRequest()
 
-        let sort = NSSortDescriptor(key: "location", ascending: true)
+        let sort = NSSortDescriptor(key: "id", ascending: true)
         request.sortDescriptors = [sort]
 
         do {
@@ -55,6 +59,55 @@ class MapViewModel: MapViewModelProtocol {
             print("Error fetching data from context \(error)")
         }
     }
+
+    func saveNewPin(id: String, location: CLLocationCoordinate2D) {
+        do {
+            try storageService.performContainerAction { container in
+                let context = container.viewContext
+
+                let newPin = Pin(context: context)
+                newPin.id = id
+                newPin.latitude = location.latitude
+                newPin.longitude = location.longitude
+
+                context.insert(newPin)
+                try context.save()
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+
+    func getPins() -> [Pin]? {
+        guard let pins = pins else {
+            return nil
+        }
+        return pins
+    }
+
+    func deletePin(id: String) {
+        guard let pins = pins else { return }
+
+        let pinToDelete = { () -> Pin in
+            let pin = pins.filter { $0.id != id }
+            print(pin.first!.id)
+            return pin.first!
+        }
+
+        do {
+            try storageService.performContainerAction { container in
+
+                let context = container.viewContext
+                context.delete(pinToDelete())
+                try context.save()
+            }
+        } catch {
+            print("Could not delete \(error.localizedDescription)")
+        }
+    }
+
+
+
 
     // MARK: - Map Region
 

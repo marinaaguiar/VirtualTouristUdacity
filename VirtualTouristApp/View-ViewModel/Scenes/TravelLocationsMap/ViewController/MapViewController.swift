@@ -16,6 +16,7 @@ class MapViewController: UIViewController {
         super.viewDidLoad()
         mapView.delegate = self
         setupTapGestureRecognizer()
+        populateMap()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -23,6 +24,7 @@ class MapViewController: UIViewController {
         setupSavedZoomRegion()
     }
 
+    // Display initial map zoom region or the previous saved region
     func setupSavedZoomRegion() {
         let region = viewModel.setupRegion(in: mapView)
     }
@@ -36,29 +38,33 @@ class MapViewController: UIViewController {
     }
 
     @objc func handleHold(gestureRecognizer: UILongPressGestureRecognizer) {
+//        guard let pinSelectedID = getPinSelectedID() else { return }
         let locationInView = gestureRecognizer.location(in: view)
         let locationInMap = gestureRecognizer.location(in: mapView)
         let coordinate = mapView.convert(locationInMap,toCoordinateFrom: mapView)
-        let pinSelected = mapView.selectedAnnotations
+        let pinsSelected = mapView.selectedAnnotations.compactMap { $0 as? MapAnnotation }
 
         switch gestureRecognizer.state {
-        case .began where !pinSelected.isEmpty:
-            trashImageView.isHidden = false
-            trashImageView.isUserInteractionEnabled = true
-        case .began:
+        case .began where pinsSelected.isEmpty:
             print("create a new pin")
             vibration.feedbackVibration(.light)
             createNewPin(coordinate: coordinate)
-            mapView.addAnnotations(pinsArray)
+        case .began:
+            vibration.feedbackVibration(.soft)
+            trashImageView.isHidden = false
+            trashImageView.isUserInteractionEnabled = true
         case .changed where isItemDraggedToTrash(locationInView):
             trashImageView.image = UIImage(named: "TrashOpenIcon")
         case .ended:
+            guard let selectedPinID = pinsSelected.first?.id else { break }
+            vibration.feedbackVibration(.light)
             if isItemDraggedToTrash(locationInView) {
-                print("pinSelected \(pinSelected)")
-                let newPinsArray = pinsArray.filter { $0.subtitle != pinSelected.first?.subtitle }
-                mapView.removeAnnotations(pinSelected)
+                print(selectedPinID)
+                viewModel.deletePin(id: selectedPinID)
                 vibration.feedbackVibration(.heavy)
-                refreshMap(newPinsArray: newPinsArray)
+//                let newPinsArray = pinsArray.filter { $0.subtitle != pinsSelected.first?.subtitle }
+                mapView.removeAnnotations(pinsSelected)
+//                refreshMap(newPinsArray: newPinsArray)
             }
             trashImageView.isHidden = true
             trashImageView.image = UIImage(named: "TrashIcon")
@@ -67,10 +73,32 @@ class MapViewController: UIViewController {
         }
     }
 
+    // Remove all the pins showing in the map
+    // And display all the new pins
     func refreshMap(newPinsArray: [MKPointAnnotation] ) {
-        pinsArray.removeAll()
-        pinsArray = newPinsArray
-        mapView.addAnnotations(pinsArray)
+//        pinsArray.removeAll()
+//        pinsArray = newPinsArray
+//        mapView.addAnnotations(pinsArray)
+    }
+
+    func populateMap() {
+        let annotations = viewModel.getPins()?.map { pin -> MapAnnotation in
+            // convert to annotation
+            let coordinate = CLLocationCoordinate2D(
+                latitude: pin.latitude,
+                longitude: pin.longitude
+            )
+
+            let existingPin = MapAnnotation(
+                id: pin.id ?? UUID().uuidString,
+                coordinate: coordinate
+            )
+//            existingPin.coordinate.latitude = pin.latitude
+//            existingPin.coordinate.longitude = pin.longitude
+//            existingPin.subtitle = pin.id
+            return existingPin
+        }
+        mapView.addAnnotations(annotations ?? [])
     }
 
     func isItemDraggedToTrash(_ locationInView: CGPoint) -> Bool {
@@ -98,33 +126,72 @@ class MapViewController: UIViewController {
 
     func createNewPin(coordinate: CLLocationCoordinate2D) {
         let uuid = UUID().uuidString
-        let newPin = MKPointAnnotation()
-        newPin.subtitle = uuid
-        newPin.coordinate = CLLocationCoordinate2D(
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude
+        let newPin = MapAnnotation(
+            id: uuid,
+            coordinate: CLLocationCoordinate2D(
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude
+            )
         )
-        pinsArray.append(newPin)
-    }
-
-    func handleSelectedPin(pinAnnotation: MKAnnotationView) {
-        let holdGesture = UILongPressGestureRecognizer(target: self, action: nil)
-
-        if holdGesture.minimumPressDuration > 0.15 {
-            pinAnnotation.addGestureRecognizer(holdGesture)
-            pinAnnotation.isDraggable = true
-        }
+        viewModel.saveNewPin(id: uuid, location: coordinate)
+        mapView.addAnnotation(newPin)
     }
 
     func deletePin(pinAnnotation: MKAnnotationView) {
 
     }
 
-    func presentPhotoAlbumViewController() {
+    func handleSelectedPin(pinAnnotation: MKAnnotationView) {
+        let holdGesture = UILongPressGestureRecognizer(target: self, action: #selector(handlePinHold))
+        pinAnnotation.addGestureRecognizer(holdGesture)
+        pinAnnotation.dragState = .dragging
+        pinAnnotation.isDraggable = true
+    }
+
+    @objc func handlePinHold(gestureRecognizer: UILongPressGestureRecognizer) {
+        let locationInView = gestureRecognizer.location(in: view)
+        let locationInMap = gestureRecognizer.location(in: mapView)
+        let coordinate = mapView.convert(locationInMap,toCoordinateFrom: mapView)
+        let pinsSelected = mapView.selectedAnnotations.compactMap { $0 as? MapAnnotation }
+
+        switch gestureRecognizer.state {
+        case .began:
+            vibration.feedbackVibration(.soft)
+            trashImageView.isHidden = false
+            trashImageView.isUserInteractionEnabled = true
+        case .changed where isItemDraggedToTrash(locationInView):
+            trashImageView.image = UIImage(named: "TrashOpenIcon")
+        case .ended:
+            guard let selectedPinID = pinsSelected.first?.id else { break }
+            vibration.feedbackVibration(.light)
+            if isItemDraggedToTrash(locationInView) {
+                print(selectedPinID)
+                viewModel.deletePin(id: selectedPinID)
+                vibration.feedbackVibration(.heavy)
+//                let newPinsArray = pinsArray.filter { $0.subtitle != pinsSelected.first?.subtitle }
+                mapView.removeAnnotations(pinsSelected)
+//                refreshMap(newPinsArray: newPinsArray)
+            }
+            trashImageView.isHidden = true
+            trashImageView.image = UIImage(named: "TrashIcon")
+        default:
+            break
+        }
+
+    }
+
+    func presentPhotoAlbumViewController(pinAnnotation: MKAnnotationView) {
+        guard let latitude = pinAnnotation.annotation?.coordinate.latitude, let longitude = pinAnnotation.annotation?.coordinate.longitude else {
+            return
+        }
+
         let photoAlbumViewController = self.storyboard?.instantiateViewController(withIdentifier: Constants.PhotoAlbumViewControllerID) as! PhotoAlbumViewController
+        photoAlbumViewController.viewModel = PhotoAlbumViewModel(delegate: photoAlbumViewController, latitude: latitude, longitude: longitude)
         self.show(photoAlbumViewController, sender: self)
     }
 }
+
+//MARK: - UIGestureRecognizerDelegate
 
 extension MapViewController: UIGestureRecognizerDelegate {
 
@@ -132,6 +199,8 @@ extension MapViewController: UIGestureRecognizerDelegate {
         return true
     }
 }
+
+    //MARK: - MapViewDelegate
 
 extension MapViewController: MKMapViewDelegate {
 
@@ -143,7 +212,7 @@ extension MapViewController: MKMapViewDelegate {
 
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         vibration.feedbackVibration(.medium)
-        presentPhotoAlbumViewController()
+        presentPhotoAlbumViewController(pinAnnotation: view)
         handleSelectedPin(pinAnnotation: view)
     }
 
