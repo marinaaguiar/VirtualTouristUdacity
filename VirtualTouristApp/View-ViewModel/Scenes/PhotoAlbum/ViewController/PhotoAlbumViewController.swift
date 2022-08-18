@@ -7,11 +7,14 @@ class PhotoAlbumViewController: UIViewController {
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var seeMoreButton: UIButton!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+    @IBOutlet weak var trashButton: UIButton!
 
     var viewModel: PhotoAlbumViewModelProtocol!
 
+    var selectedPhotos: [String] = []
+
     private let images: [UIImage] = Array(1...11).map { UIImage(named: String($0))! }
-    private var page: Int = 1
+//    private var page: Int = 1
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -20,7 +23,9 @@ class PhotoAlbumViewController: UIViewController {
         collectionView.delegate = self
         viewModel.loadData()
         activityIndicator.isHidden = true
+        trashButton.isHidden = true
         collectionView.collectionViewLayout = createLayout()
+        collectionView.allowsMultipleSelection = true
     }
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
@@ -50,6 +55,11 @@ class PhotoAlbumViewController: UIViewController {
         viewModel.loadMoreData()
     }
 
+    @IBAction func trashButtonPressed(_ sender: Any) {
+
+    }
+
+
     func setEmptyMessage(_ message: String) {
         let messageLabel = UILabel(frame: CGRect(x: 0, y: 0, width: collectionView.bounds.width, height: collectionView.bounds.size.height))
         messageLabel.text = message
@@ -70,6 +80,10 @@ class PhotoAlbumViewController: UIViewController {
             setEmptyMessage("")
         }
     }
+
+    func deleteSelectedItem(indexPath: IndexPath) {
+        //
+    }
 }
 
 extension PhotoAlbumViewController: UICollectionViewDataSource {
@@ -82,7 +96,11 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CollectionViewCell", for: indexPath) as? CollectionViewCell else {
             fatalError("Unexpected Index Path")
         }
-        viewModel.updateImage(imageView: cell.cellImageView, imageUrl: viewModel.imagesUrlString[indexPath.row])
+        cell.checkMark.isHidden = true
+        viewModel.updateImage(
+            imageView: cell.cellImageView,
+            imageUrl: viewModel.imagesUrlString[indexPath.row]
+        )
         return cell
     }
 }
@@ -91,6 +109,23 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
 
 extension PhotoAlbumViewController: UICollectionViewDelegate {
 
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        trashButton.isHidden = false
+        selectedPhotos.append(viewModel.imagesUrlString[indexPath.item])
+        print(selectedPhotos)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        let selectedPhoto = viewModel.imagesUrlString[indexPath.item]
+        if selectedPhotos.contains(selectedPhoto) {
+            selectedPhotos = selectedPhotos.filter { !$0.contains(selectedPhoto) }
+            print(selectedPhotos)
+        }
+    }
+
+    func collectionView(_ collectionView: UICollectionView, didBeginMultipleSelectionInteractionAt indexPath: IndexPath) {
+        print(indexPath)
+    }
 }
 
     //MARK: - PhotoAlbumViewModelDelegate
@@ -123,5 +158,23 @@ extension PhotoAlbumViewController: PhotoAlbumViewModelDelegate {
 
 class CollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var cellImageView: UIImageView!
+    @IBOutlet weak var checkMark: UIImageView!
 
+    override var isSelected: Bool {
+        didSet {
+            if isSelected {
+                checkMark.isHidden = false
+                checkMark.image = UIImage(systemName: "checkmark.circle.fill")
+                cellImageView.alpha = 0.5
+            } else {
+                checkMark.isHidden = true
+                cellImageView.alpha = 1
+            }
+        }
+    }
+
+    override func awakeFromNib() {
+      super.awakeFromNib()
+      isSelected = false
+    }
 }
