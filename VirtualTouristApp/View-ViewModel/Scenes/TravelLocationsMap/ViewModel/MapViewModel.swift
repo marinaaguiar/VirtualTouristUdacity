@@ -9,6 +9,7 @@ protocol MapViewModelProtocol: AnyObject {
     func saveNewPin(id: String, location: CLLocationCoordinate2D) 
     func getStoredUserRegion() -> Region?
     func setupRegion(in mapView: MKMapView)
+    func getObjectID(for pinID: String) -> NSManagedObjectID? 
     func getPins() -> [Pin]?
     func deletePin(id: String)
 }
@@ -76,6 +77,17 @@ class MapViewModel: MapViewModelProtocol {
         } catch {
             print(error.localizedDescription)
         }
+    }
+
+    func getObjectID(for pinID: String) -> NSManagedObjectID? {
+        guard let pins = pins else { return nil}
+
+        for pin in pins {
+            if pin.id == pinID {
+                return pin.objectID
+            }
+        }
+        return nil
     }
 
     func getPins() -> [Pin]? {

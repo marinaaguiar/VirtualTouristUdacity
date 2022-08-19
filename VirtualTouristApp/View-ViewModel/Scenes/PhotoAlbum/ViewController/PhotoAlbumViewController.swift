@@ -15,10 +15,6 @@ class PhotoAlbumViewController: UIViewController {
     var selectedPhotosIndex: [IndexPath] = []
 
     var selectedPhotosDic: [String: Int] = [:]
-//    var selectedPhotosSet = Set<String, Int>()
-
-    private let images: [UIImage] = Array(1...11).map { UIImage(named: String($0))! }
-//    private var page: Int = 1
 
     override func viewDidLoad() {
         super.viewDidLoad()

@@ -9,6 +9,7 @@ protocol PhotoAlbumViewModelProtocol: AnyObject {
     func loadData()
     func loadMoreData()
     func updateImage(imageView: UIImageView, imageUrl: String?)
+    func displayPhotos(for pinID: String)
 }
 
 
@@ -23,15 +24,17 @@ class PhotoAlbumViewModel: PhotoAlbumViewModelProtocol {
     private let networkingService = NetworkingService()
     private let apiService = FlickrAPIService()
     private weak var delegate: PhotoAlbumViewModelDelegate?
+
     private var photos: [PhotoID] = []
     var imagesUrlString: [String] = []
     var isLoading: Bool = false
     private var page: Int = 1
+
     private var latitude: Double
     private var longitude: Double
 
     private let storageService = DataController.shared
-
+    private var pin: Pin!
     private var album: [Photo]?
 
     // MARK: - Dependencie Injection
@@ -62,6 +65,9 @@ extension PhotoAlbumViewModel {
     func refreshItems() {
         let request: NSFetchRequest<Photo> = Photo.fetchRequest()
 
+        let predicate = NSPredicate(format: "pin = %@", pin)
+        request.predicate = predicate
+
         let sort = NSSortDescriptor(key: "creationDate", ascending: true)
         request.sortDescriptors = [sort]
 
@@ -83,7 +89,7 @@ extension PhotoAlbumViewModel {
                 let context = container.viewContext
 
                 let newImage = Photo(context: context)
-                newImage.imageURL = imagesUrl
+                newImage.imagesURL = imagesUrl
 
                 context.insert(newImage)
                 try context.save()
@@ -92,11 +98,40 @@ extension PhotoAlbumViewModel {
             print(error.localizedDescription)
         }
     }
+
+    func deleteImage(indexPathItem: Int) {
+        guard let album = album else { return }
+
+        do {
+            try storageService.performContainerAction { container in
+
+                let context = container.viewContext
+                context.delete(album[indexPathItem])
+                try context.save()
+            }
+        } catch {
+            print("Could not delete \(error.localizedDescription)")
+        }
+    }
+
+    func setAlbum(pinID: NSManagedObjectID) -> Pin {
+        try! storageService.performContainerAction { container in
+            let context = container.viewContext
+            let pin = context.object(with: pinID) as! Pin
+
+            self.pin = pin
+        }
+        return pin
+    }
 }
 
     //MARK: - API Service
 
 extension PhotoAlbumViewModel {
+
+    func displayPhotos(for pinID: String) {
+
+    }
 
     func loadData() {
         apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: 1) { result in

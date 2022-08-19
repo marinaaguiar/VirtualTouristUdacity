@@ -180,13 +180,15 @@ class MapViewController: UIViewController {
 
     }
 
-    func presentPhotoAlbumViewController(pinAnnotation: MKAnnotationView) {
-        guard let latitude = pinAnnotation.annotation?.coordinate.latitude, let longitude = pinAnnotation.annotation?.coordinate.longitude else {
-            return
-        }
+    func presentPhotoAlbumViewController(pinAnnotation: MapAnnotation) {
+        let latitude = pinAnnotation.coordinate.latitude
+        let longitude = pinAnnotation.coordinate.longitude
+        let id = pinAnnotation.id
 
         let photoAlbumViewController = self.storyboard?.instantiateViewController(withIdentifier: Constants.PhotoAlbumViewControllerID) as! PhotoAlbumViewController
         photoAlbumViewController.viewModel = PhotoAlbumViewModel(delegate: photoAlbumViewController, latitude: latitude, longitude: longitude)
+        photoAlbumViewController.viewModel.getObjectID(for: id)
+//        photoAlbumViewController.viewModel.displayPhotos(for: pinAnnotation.id)
         self.show(photoAlbumViewController, sender: self)
     }
 }
@@ -212,7 +214,7 @@ extension MapViewController: MKMapViewDelegate {
 
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         vibration.feedbackVibration(.medium)
-        presentPhotoAlbumViewController(pinAnnotation: view)
+        presentPhotoAlbumViewController(pinAnnotation: view.annotation as! MapAnnotation)
         handleSelectedPin(pinAnnotation: view)
     }
 
