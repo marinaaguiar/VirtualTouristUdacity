@@ -106,9 +106,6 @@ class MapViewModel: MapViewModelProtocol {
         }
     }
 
-
-
-
     // MARK: - Map Region
 
     func setupRegion(in mapView: MKMapView) {

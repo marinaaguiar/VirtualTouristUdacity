@@ -12,6 +12,10 @@ class PhotoAlbumViewController: UIViewController {
     var viewModel: PhotoAlbumViewModelProtocol!
 
     var selectedPhotos: [String] = []
+    var selectedPhotosIndex: [IndexPath] = []
+
+    var selectedPhotosDic: [String: Int] = [:]
+//    var selectedPhotosSet = Set<String, Int>()
 
     private let images: [UIImage] = Array(1...11).map { UIImage(named: String($0))! }
 //    private var page: Int = 1
@@ -26,6 +30,13 @@ class PhotoAlbumViewController: UIViewController {
         trashButton.isHidden = true
         collectionView.collectionViewLayout = createLayout()
         collectionView.allowsMultipleSelection = true
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isBeingDismissed {
+//            viewModel.saveAlbum(imagesUrl: viewModel.imagesUrlString)
+        }
     }
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
@@ -56,7 +67,7 @@ class PhotoAlbumViewController: UIViewController {
     }
 
     @IBAction func trashButtonPressed(_ sender: Any) {
-
+        
     }
 
 
@@ -81,8 +92,14 @@ class PhotoAlbumViewController: UIViewController {
         }
     }
 
-    func deleteSelectedItem(indexPath: IndexPath) {
-        //
+    func updateButtonsStatus() {
+        if !selectedPhotos.isEmpty {
+            seeMoreButton.isHidden = true
+            trashButton.isHidden = false
+        } else {
+            seeMoreButton.isHidden = false
+            trashButton.isHidden = true
+        }
     }
 }
 
@@ -96,7 +113,6 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CollectionViewCell", for: indexPath) as? CollectionViewCell else {
             fatalError("Unexpected Index Path")
         }
-        cell.checkMark.isHidden = true
         viewModel.updateImage(
             imageView: cell.cellImageView,
             imageUrl: viewModel.imagesUrlString[indexPath.row]
@@ -110,21 +126,17 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
 extension PhotoAlbumViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        trashButton.isHidden = false
-        selectedPhotos.append(viewModel.imagesUrlString[indexPath.item])
-        print(selectedPhotos)
+        let selectedPhoto = viewModel.imagesUrlString[indexPath.item]
+        selectedPhotos.append(selectedPhoto)
+        updateButtonsStatus()
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         let selectedPhoto = viewModel.imagesUrlString[indexPath.item]
         if selectedPhotos.contains(selectedPhoto) {
             selectedPhotos = selectedPhotos.filter { !$0.contains(selectedPhoto) }
-            print(selectedPhotos)
         }
-    }
-
-    func collectionView(_ collectionView: UICollectionView, didBeginMultipleSelectionInteractionAt indexPath: IndexPath) {
-        print(indexPath)
+        updateButtonsStatus()
     }
 }
 
@@ -143,6 +155,7 @@ extension PhotoAlbumViewController: PhotoAlbumViewModelDelegate {
                 self.collectionView.isScrollEnabled = true
                 self.collectionView.reloadData()
                 self.checkIfIsEmpty()
+                self.seeMoreButton.isEnabled = true
                 self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
             }
         }

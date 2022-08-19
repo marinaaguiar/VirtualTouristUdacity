@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import Kingfisher
+import CoreData
 
 protocol PhotoAlbumViewModelProtocol: AnyObject {
     var imagesUrlString: [String] { get }
@@ -28,7 +29,10 @@ class PhotoAlbumViewModel: PhotoAlbumViewModelProtocol {
     private var page: Int = 1
     private var latitude: Double
     private var longitude: Double
-    
+
+    private let storageService = DataController.shared
+
+    private var album: [Photo]?
 
     // MARK: - Dependencie Injection
 
@@ -37,8 +41,62 @@ class PhotoAlbumViewModel: PhotoAlbumViewModelProtocol {
         self.latitude = latitude
         self.longitude = longitude
     }
+}
 
-    // MARK: - Methods
+    // MARK: - CoreData
+
+extension PhotoAlbumViewModel {
+
+    func initializeCoreData() {
+        storageService.loadPersistentStores { result in
+            switch result {
+            case .success:
+                print("Loaded successfully")
+                self.refreshItems()
+            case .failure:
+                print("Failed to load")
+            }
+        }
+    }
+
+    func refreshItems() {
+        let request: NSFetchRequest<Photo> = Photo.fetchRequest()
+
+        let sort = NSSortDescriptor(key: "creationDate", ascending: true)
+        request.sortDescriptors = [sort]
+
+        do {
+            try storageService.performContainerAction { container in
+                let context = container.viewContext
+                let objects = try context.fetch(request)
+                self.album = objects
+                self.delegate?.didLoad()
+            }
+        } catch {
+            print("Error fetching data from context \(error)")
+        }
+    }
+
+    func saveDeletedImages(imagesUrl: [String]) {
+        do {
+            try storageService.performContainerAction { container in
+                let context = container.viewContext
+
+                let newImage = Photo(context: context)
+                newImage.imageURL = imagesUrl
+
+                context.insert(newImage)
+                try context.save()
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+}
+
+    //MARK: - API Service
+
+extension PhotoAlbumViewModel {
 
     func loadData() {
         apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: 1) { result in
