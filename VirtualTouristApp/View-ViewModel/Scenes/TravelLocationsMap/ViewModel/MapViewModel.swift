@@ -5,13 +5,17 @@ import CoreData
 protocol MapViewModelProtocol: AnyObject {
 
     func initializeCoreData()
+    func refreshItems() 
     func saveUserZoomRegion(center: CLLocationCoordinate2D, span: MKCoordinateSpan)
-    func saveNewPin(id: String, location: CLLocationCoordinate2D) 
+    func saveNewPin(id: String, location: CLLocationCoordinate2D)
     func getStoredUserRegion() -> Region?
     func setupRegion(in mapView: MKMapView)
-    func getObjectID(for pinID: String) -> NSManagedObjectID? 
+//    func getObjectID(for pinID: String) -> NSManagedObjectID?
+    func getObjectID(for id: String) -> NSManagedObjectID?
+    func setPin(pinID: NSManagedObjectID) -> Pin
     func getPins() -> [Pin]?
-    func deletePin(id: String)
+    func deletePin(with id: String)
+    func setPin(with id: String)
 }
 
 protocol MapViewModelDelegate: AnyObject {
@@ -25,6 +29,7 @@ class MapViewModel: MapViewModelProtocol {
     private let defaults = UserDefaults.standard
 
     private var pins: [Pin]?
+    private var pin: Pin!
 
     init(delegate: MapViewModelDelegate?) {
         self.delegate = delegate
@@ -46,8 +51,8 @@ class MapViewModel: MapViewModelProtocol {
     func refreshItems() {
         let request: NSFetchRequest<Pin> = Pin.fetchRequest()
 
-        let sort = NSSortDescriptor(key: "id", ascending: true)
-        request.sortDescriptors = [sort]
+//        let sort = NSSortDescriptor(key: "id", ascending: true)
+//        request.sortDescriptors = [sort]
 
         do {
             try storageService.performContainerAction { container in
@@ -79,17 +84,6 @@ class MapViewModel: MapViewModelProtocol {
         }
     }
 
-    func getObjectID(for pinID: String) -> NSManagedObjectID? {
-        guard let pins = pins else { return nil}
-
-        for pin in pins {
-            if pin.id == pinID {
-                return pin.objectID
-            }
-        }
-        return nil
-    }
-
     func getPins() -> [Pin]? {
         guard let pins = pins else {
             return nil
@@ -97,25 +91,61 @@ class MapViewModel: MapViewModelProtocol {
         return pins
     }
 
-    func deletePin(id: String) {
-        guard let pins = pins else { return }
-
-        let pinToDelete = { () -> Pin in
-            let pin = pins.filter { $0.id != id }
-            print(pin.first!.id)
-            return pin.first!
-        }
-
+    func deletePin(with id: String) {
         do {
             try storageService.performContainerAction { container in
-
                 let context = container.viewContext
-                context.delete(pinToDelete())
+
+                // we get all pins matching the ID we have
+                let fetchRequest = Pin.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "id == %@", id)
+
+                // we delete each pin. we expect that we'll have either
+                // 0 or 1 matching pin, but we have to handle the possibility
+                // of more, as the database doesn't know we can only have one.
+                let matchingPins = try context.fetch(fetchRequest)
+                matchingPins.forEach { pin in context.delete(pin) }
+
                 try context.save()
             }
         } catch {
             print("Could not delete \(error.localizedDescription)")
         }
+    }
+
+    func setPin(with id: String) {
+        guard let pins = pins else { return }
+
+        let pinSelected = pins.filter { $0.id == id }
+
+        guard let pinSelected = pinSelected.first else { return }
+
+        let objectID = pinSelected.objectID
+
+        try! storageService.performContainerAction { container in
+            let context = container.viewContext
+            let pin = context.object(with: objectID) as! Pin
+
+            self.pin = pin
+            print(pin.id)
+        }
+    }
+
+    func getObjectID(for id: String) -> NSManagedObjectID? {
+        guard let pins = pins else { return nil }
+        let pinSelected = pins.filter { $0.id == id }
+        print(pinSelected)
+        return pinSelected.first?.objectID
+    }
+
+    func setPin(pinID: NSManagedObjectID) -> Pin {
+        try! storageService.performContainerAction { container in
+            let context = container.viewContext
+            let pin = context.object(with: pinID) as! Pin
+
+            self.pin = pin
+        }
+        return pin
     }
 
     // MARK: - Map Region

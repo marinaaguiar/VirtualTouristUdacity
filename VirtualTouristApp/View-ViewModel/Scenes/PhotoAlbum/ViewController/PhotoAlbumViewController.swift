@@ -5,8 +5,9 @@ import CoreLocation
 class PhotoAlbumViewController: UIViewController {
 
     @IBOutlet weak var collectionView: UICollectionView!
-    @IBOutlet weak var seeMoreButton: UIButton!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+    @IBOutlet weak var seeMoreButton: UIButton!
+    @IBOutlet weak var seeMoreactivityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var trashButton: UIButton!
 
     var viewModel: PhotoAlbumViewModelProtocol!
@@ -22,7 +23,9 @@ class PhotoAlbumViewController: UIViewController {
         collectionView.dataSource = self
         collectionView.delegate = self
         viewModel.loadData()
-        activityIndicator.isHidden = true
+        self.activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+        seeMoreactivityIndicator.isHidden = true
         trashButton.isHidden = true
         collectionView.collectionViewLayout = createLayout()
         collectionView.allowsMultipleSelection = true
@@ -57,13 +60,13 @@ class PhotoAlbumViewController: UIViewController {
     @IBAction func seeMoreButtonPressed(_ sender: UIButton) {
         collectionView.isScrollEnabled = false
         seeMoreButton.isHidden = true
-        activityIndicator.isHidden = false
-        activityIndicator.startAnimating()
+        seeMoreactivityIndicator.isHidden = false
+        seeMoreactivityIndicator.startAnimating()
         viewModel.loadMoreData()
     }
 
     @IBAction func trashButtonPressed(_ sender: Any) {
-        
+
     }
 
 
@@ -147,6 +150,8 @@ extension PhotoAlbumViewController: PhotoAlbumViewModelDelegate {
             if !self.viewModel.isLoading {
                 self.activityIndicator.stopAnimating()
                 self.activityIndicator.isHidden = true
+                self.seeMoreactivityIndicator.stopAnimating()
+                self.seeMoreactivityIndicator.isHidden = true
                 self.seeMoreButton.isHidden = false
                 self.collectionView.isScrollEnabled = true
                 self.collectionView.reloadData()
