@@ -23,10 +23,10 @@
                                 <gestureRecognizers/>
                             </mapView>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="aaU-Dc-K7k">
-                                <rect key="frame" x="172" y="742" width="70" height="70"/>
+                                <rect key="frame" x="164.5" y="727" width="85" height="85"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="70" id="5D9-UO-Ebc"/>
-                                    <constraint firstAttribute="height" constant="70" id="esS-NH-LzF"/>
+                                    <constraint firstAttribute="width" constant="85" id="5D9-UO-Ebc"/>
+                                    <constraint firstAttribute="height" constant="85" id="esS-NH-LzF"/>
                                 </constraints>
                                 <imageReference key="image" image="TrashIcon" symbolScale="small"/>
                                 <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="default"/>
@@ -185,8 +185,8 @@
                     <connections>
                         <outlet property="activityIndicator" destination="JOp-vQ-I9d" id="FXA-MX-fe9"/>
                         <outlet property="collectionView" destination="pcd-wi-ziM" id="KgR-Ie-upe"/>
-                        <outlet property="seeMoreButton" destination="0pr-a2-GU3" id="bDT-8n-U8H"/>
-                        <outlet property="seeMoreactivityIndicator" destination="hiT-Wt-wae" id="RpN-hd-j6S"/>
+                        <outlet property="newCollectionButton" destination="0pr-a2-GU3" id="bDT-8n-U8H"/>
+                        <outlet property="toolBarActivityIndicator" destination="hiT-Wt-wae" id="RpN-hd-j6S"/>
                         <outlet property="trashButton" destination="QAO-XA-tz0" id="NDw-rh-RnN"/>
                     </connections>
                 </viewController>

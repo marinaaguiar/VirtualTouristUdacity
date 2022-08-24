@@ -14,8 +14,8 @@ class MapViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        handleHoldRecognizer()
         mapView.delegate = self
+        handleHoldRecognizer()
         pinDeletedLabel.isHidden = true
         populateMap()
     }
@@ -28,6 +28,22 @@ class MapViewController: UIViewController {
     // Display initial map zoom region or the previous saved region
     func setupSavedZoomRegion() {
         let region = viewModel.setupRegion(in: mapView)
+    }
+
+    func populateMap() {
+        let annotations = viewModel.getPins()?.map { pin -> MapAnnotation in
+            // convert to annotation
+            let coordinate = CLLocationCoordinate2D(
+                latitude: pin.latitude,
+                longitude: pin.longitude
+            )
+            let annotationFromExistingPin = MapAnnotation(
+                id: pin.id ?? UUID().uuidString,
+                coordinate: coordinate
+            )
+            return annotationFromExistingPin
+        }
+        mapView.addAnnotations(annotations ?? [])
     }
 
     func handleHoldRecognizer() {
@@ -48,6 +64,7 @@ class MapViewController: UIViewController {
             print("create a new pin")
             vibration.feedbackVibration(.light)
             createNewPin(coordinate: coordinate)
+            viewModel.refreshItems()
         case .changed:
             isItemDraggedToTrash(locationInView)
         default:
@@ -55,20 +72,17 @@ class MapViewController: UIViewController {
         }
     }
 
-    func populateMap() {
-        let annotations = viewModel.getPins()?.map { pin -> MapAnnotation in
-            // convert to annotation
-            let coordinate = CLLocationCoordinate2D(
-                latitude: pin.latitude,
-                longitude: pin.longitude
+    func createNewPin(coordinate: CLLocationCoordinate2D) {
+        let uuid = UUID().uuidString
+        let newPin = MapAnnotation(
+            id: uuid,
+            coordinate: CLLocationCoordinate2D(
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude
             )
-            let annotationFromExistingPin = MapAnnotation(
-                id: pin.id ?? UUID().uuidString,
-                coordinate: coordinate
-            )
-            return annotationFromExistingPin
-        }
-        mapView.addAnnotations(annotations ?? [])
+        )
+        viewModel.saveNewPin(id: uuid, location: coordinate)
+        mapView.addAnnotation(newPin)
     }
 
     func isItemDraggedToTrash(_ locationInView: CGPoint) {
@@ -98,19 +112,6 @@ class MapViewController: UIViewController {
         }
     }
 
-    func createNewPin(coordinate: CLLocationCoordinate2D) {
-        let uuid = UUID().uuidString
-        let newPin = MapAnnotation(
-            id: uuid,
-            coordinate: CLLocationCoordinate2D(
-                latitude: coordinate.latitude,
-                longitude: coordinate.longitude
-            )
-        )
-        viewModel.saveNewPin(id: uuid, location: coordinate)
-        mapView.addAnnotation(newPin)
-    }
-
     func showDeletedPinMessage() {
         pinDeletedLabel.isHidden = false
         view.layer.masksToBounds = true
@@ -122,15 +123,15 @@ class MapViewController: UIViewController {
         pinDeletedLabel.isHidden = true
     }
 
-    func presentPhotoAlbumViewController(pinAnnotation: MKPointAnnotation) {
+    func presentPhotoAlbumViewController(pinAnnotation: MapAnnotation) {
+        guard let objectID = viewModel.getObjectID(for: pinAnnotation.id) else {
+            return
+        }
         let latitude = pinAnnotation.coordinate.latitude
         let longitude = pinAnnotation.coordinate.longitude
-//        let id = pinAnnotation.id
-
         let photoAlbumViewController = self.storyboard?.instantiateViewController(withIdentifier: Constants.PhotoAlbumViewControllerID) as! PhotoAlbumViewController
         photoAlbumViewController.viewModel = PhotoAlbumViewModel(delegate: photoAlbumViewController, latitude: latitude, longitude: longitude)
-//        photoAlbumViewController.viewModel.getObjectID(for: id)
-//        photoAlbumViewController.viewModel.displayPhotos(for: pinAnnotation.id)
+        photoAlbumViewController.viewModel.getPin(pinID: objectID)
         self.show(photoAlbumViewController, sender: self)
     }
 }
@@ -155,19 +156,16 @@ extension MapViewController: MKMapViewDelegate {
     }
 
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        view.isDraggable = true
         vibration.feedbackVibration(.medium)
         presentPhotoAlbumViewController(pinAnnotation: view.annotation as! MapAnnotation)
-        view.isDraggable = true
     }
 
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, didChange newState: MKAnnotationView.DragState, fromOldState oldState: MKAnnotationView.DragState) {
         guard let annotation = view.annotation as? MapAnnotation else { return }
-        print("old state \(oldState.rawValue)")
-        print("new state \(newState.rawValue)")
         switch newState {
         case .starting:
             vibration.feedbackVibration(.soft)
-            viewModel.setPin(with: annotation.id)
         case .dragging:
             trashImageView.isHidden = false
             trashImageView.isUserInteractionEnabled = true

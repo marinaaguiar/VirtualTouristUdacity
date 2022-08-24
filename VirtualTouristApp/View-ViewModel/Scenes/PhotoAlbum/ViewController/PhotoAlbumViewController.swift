@@ -6,8 +6,8 @@ class PhotoAlbumViewController: UIViewController {
 
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
-    @IBOutlet weak var seeMoreButton: UIButton!
-    @IBOutlet weak var seeMoreactivityIndicator: UIActivityIndicatorView!
+    @IBOutlet weak var newCollectionButton: UIButton!
+    @IBOutlet weak var toolBarActivityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var trashButton: UIButton!
 
     var viewModel: PhotoAlbumViewModelProtocol!
@@ -20,12 +20,13 @@ class PhotoAlbumViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+//        viewModel.refreshItems()
+//        viewModel.loadData()
+        viewModel.isPhotoAlbumAlreadyExists()
         collectionView.dataSource = self
         collectionView.delegate = self
-        viewModel.loadData()
-        self.activityIndicator.isHidden = false
-        activityIndicator.startAnimating()
-        seeMoreactivityIndicator.isHidden = true
+        updateActivityIndicator(loading: true)
+        toolBarActivityIndicator.isHidden = true
         trashButton.isHidden = true
         collectionView.collectionViewLayout = createLayout()
         collectionView.allowsMultipleSelection = true
@@ -57,12 +58,10 @@ class PhotoAlbumViewController: UIViewController {
         return UICollectionViewCompositionalLayout(section: section)
     }
     
-    @IBAction func seeMoreButtonPressed(_ sender: UIButton) {
+    @IBAction func newCollectionButtonPressed(_ sender: UIButton) {
         collectionView.isScrollEnabled = false
-        seeMoreButton.isHidden = true
-        seeMoreactivityIndicator.isHidden = false
-        seeMoreactivityIndicator.startAnimating()
-        viewModel.loadMoreData()
+        updateToolBarButton(loading: true)
+        viewModel.loadData()
     }
 
     @IBAction func trashButtonPressed(_ sender: Any) {
@@ -81,42 +80,67 @@ class PhotoAlbumViewController: UIViewController {
         collectionView.backgroundView = messageLabel
     }
 
-    func checkIfIsEmpty() {
+    func checkIfLocationHasImages() {
         if viewModel.imagesUrlString.isEmpty {
             setEmptyMessage("There is no photos in the location")
-            seeMoreButton.isEnabled = false
+            newCollectionButton.isEnabled = false
         } else {
-            seeMoreButton.isEnabled = true
+            newCollectionButton.isEnabled = true
             setEmptyMessage("")
         }
     }
 
     func updateButtonsStatus() {
         if !selectedPhotos.isEmpty {
-            seeMoreButton.isHidden = true
+            newCollectionButton.isHidden = true
             trashButton.isHidden = false
         } else {
-            seeMoreButton.isHidden = false
+            newCollectionButton.isHidden = false
             trashButton.isHidden = true
         }
     }
+
+    func updateActivityIndicator(loading: Bool) {
+        if loading {
+            activityIndicator.startAnimating()
+            activityIndicator.isHidden = false
+        } else {
+            activityIndicator.stopAnimating()
+            activityIndicator.isHidden = true
+        }
+    }
+
+    func updateToolBarButton(loading: Bool) {
+        if loading {
+            newCollectionButton.isHidden = true
+            toolBarActivityIndicator.isHidden = false
+            toolBarActivityIndicator.startAnimating()
+
+        } else {
+            toolBarActivityIndicator.stopAnimating()
+            toolBarActivityIndicator.isHidden = true
+            newCollectionButton.isHidden = false
+        }
+    }
+
+    func cell(_ collectionView: UICollectionView, indexPath: IndexPath, photoCell: PhotoCell) -> UICollectionViewCell {
+
+        let cell = collectionView.dequeCell(CollectionViewCell.self, indexPath)
+        cell.fill(photoCell)
+        return cell
+    }
 }
+
+//MARK: - UICollectionViewDataSource
 
 extension PhotoAlbumViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return viewModel.imagesUrlString.count
+        return viewModel.numberOfRows()
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CollectionViewCell", for: indexPath) as? CollectionViewCell else {
-            fatalError("Unexpected Index Path")
-        }
-        viewModel.updateImage(
-            imageView: cell.cellImageView,
-            imageUrl: viewModel.imagesUrlString[indexPath.row]
-        )
-        return cell
+        return cell(collectionView, indexPath: indexPath, photoCell: viewModel.fillCell(atIndexPath: indexPath.row))
     }
 }
 
@@ -148,47 +172,25 @@ extension PhotoAlbumViewController: PhotoAlbumViewModelDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             if !self.viewModel.isLoading {
-                self.activityIndicator.stopAnimating()
-                self.activityIndicator.isHidden = true
-                self.seeMoreactivityIndicator.stopAnimating()
-                self.seeMoreactivityIndicator.isHidden = true
-                self.seeMoreButton.isHidden = false
+                self.updateActivityIndicator(loading: false)
+                self.updateToolBarButton(loading: false)
                 self.collectionView.isScrollEnabled = true
                 self.collectionView.reloadData()
-                self.checkIfIsEmpty()
-                self.seeMoreButton.isEnabled = true
+                self.checkIfLocationHasImages()
+                self.newCollectionButton.isEnabled = true
                 self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
             }
         }
     }
 
     func didLoadWithError() {
-        //
+        let alert = UIAlertController(title: "Error loading images", message: "Try again later", preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "Ok", style: .default)
+
+        alert.addAction(okAction)
+        self.present(alert, animated: true)
     }
 }
 
 
-    //MARK: - CollectionViewCell
 
-class CollectionViewCell: UICollectionViewCell {
-    @IBOutlet weak var cellImageView: UIImageView!
-    @IBOutlet weak var checkMark: UIImageView!
-
-    override var isSelected: Bool {
-        didSet {
-            if isSelected {
-                checkMark.isHidden = false
-                checkMark.image = UIImage(systemName: "checkmark.circle.fill")
-                cellImageView.alpha = 0.5
-            } else {
-                checkMark.isHidden = true
-                cellImageView.alpha = 1
-            }
-        }
-    }
-
-    override func awakeFromNib() {
-      super.awakeFromNib()
-      isSelected = false
-    }
-}

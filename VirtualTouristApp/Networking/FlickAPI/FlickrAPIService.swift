@@ -73,7 +73,7 @@ class FlickrAPIService {
     func loadPhotoList(
         coordinate: CLLocationCoordinate2D,
         page: Int,
-        completion: @escaping (Result<PhotoAlbumResponse, Error>) -> Void
+        completion: @escaping (Result<FlickrPhotoAlbumResponse, Error>) -> Void
     ) {
         guard let url = EndPoint.list(latitude: coordinate.latitude, longitude: coordinate.longitude, page: page) else {
             completion(.failure(APIError.failedToConstructURL))

@@ -12,10 +12,9 @@ protocol MapViewModelProtocol: AnyObject {
     func setupRegion(in mapView: MKMapView)
 //    func getObjectID(for pinID: String) -> NSManagedObjectID?
     func getObjectID(for id: String) -> NSManagedObjectID?
-    func setPin(pinID: NSManagedObjectID) -> Pin
     func getPins() -> [Pin]?
     func deletePin(with id: String)
-    func setPin(with id: String)
+//    func setPin(with id: String)
 }
 
 protocol MapViewModelDelegate: AnyObject {
@@ -50,9 +49,6 @@ class MapViewModel: MapViewModelProtocol {
 
     func refreshItems() {
         let request: NSFetchRequest<Pin> = Pin.fetchRequest()
-
-//        let sort = NSSortDescriptor(key: "id", ascending: true)
-//        request.sortDescriptors = [sort]
 
         do {
             try storageService.performContainerAction { container in
@@ -113,40 +109,30 @@ class MapViewModel: MapViewModelProtocol {
         }
     }
 
-    func setPin(with id: String) {
-        guard let pins = pins else { return }
-
-        let pinSelected = pins.filter { $0.id == id }
-
-        guard let pinSelected = pinSelected.first else { return }
-
-        let objectID = pinSelected.objectID
-
-        try! storageService.performContainerAction { container in
-            let context = container.viewContext
-            let pin = context.object(with: objectID) as! Pin
-
-            self.pin = pin
-            print(pin.id)
-        }
-    }
-
     func getObjectID(for id: String) -> NSManagedObjectID? {
         guard let pins = pins else { return nil }
         let pinSelected = pins.filter { $0.id == id }
-        print(pinSelected)
+        print("PIN SELECTED ID: \(pinSelected.first?.objectID)")
         return pinSelected.first?.objectID
     }
 
-    func setPin(pinID: NSManagedObjectID) -> Pin {
-        try! storageService.performContainerAction { container in
-            let context = container.viewContext
-            let pin = context.object(with: pinID) as! Pin
-
-            self.pin = pin
-        }
-        return pin
-    }
+    //    func setPin(with id: String) {
+    //        guard let pins = pins else { return }
+    //
+    //        let pinSelected = pins.filter { $0.id == id }
+    //
+    //        guard let pinSelected = pinSelected.first else { return }
+    //
+    //        let objectID = pinSelected.objectID
+    //
+    //        try! storageService.performContainerAction { container in
+    //            let context = container.viewContext
+    //            let pin = context.object(with: objectID) as! Pin
+    //
+    //            self.pin = pin
+    //            print(pin.id)
+    //        }
+    //    }
 
     // MARK: - Map Region
 
