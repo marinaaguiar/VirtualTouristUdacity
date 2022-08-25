@@ -14,6 +14,8 @@ protocol MapViewModelProtocol: AnyObject {
     func getObjectID(for id: String) -> NSManagedObjectID?
     func getPins() -> [Pin]?
     func deletePin(with id: String)
+    func editPin(id: String, newlocation: CLLocationCoordinate2D)
+    func clearPinPhotoAlbum(for id: String)
 //    func setPin(with id: String)
 }
 
@@ -80,6 +82,29 @@ class MapViewModel: MapViewModelProtocol {
         }
     }
 
+    func editPin(id: String, newlocation: CLLocationCoordinate2D) {
+        guard let pins = pins else { return }
+        do {
+            try storageService.performContainerAction { container in
+                let context = container.viewContext
+
+                let fetchRequest = Pin.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "id == %@", id)
+
+                let matchingPins = try context.fetch(fetchRequest)
+                matchingPins.forEach { pin in
+                    pin.latitude = newlocation.latitude
+                    pin.longitude = newlocation.longitude
+                    pin.photos = []
+                }
+
+                try context.save()
+            }
+        } catch {
+            print("Could not edit pin \(error.localizedDescription)")
+        }
+    }
+
     func getPins() -> [Pin]? {
         guard let pins = pins else {
             return nil
@@ -101,6 +126,27 @@ class MapViewModel: MapViewModelProtocol {
                 // of more, as the database doesn't know we can only have one.
                 let matchingPins = try context.fetch(fetchRequest)
                 matchingPins.forEach { pin in context.delete(pin) }
+
+                try context.save()
+            }
+        } catch {
+            print("Could not delete \(error.localizedDescription)")
+        }
+    }
+
+    func clearPinPhotoAlbum(for id: String) {
+        guard let pins = pins else { return }
+        do {
+            try storageService.performContainerAction { container in
+                let context = container.viewContext
+
+                let fetchRequest = Pin.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "id == %@", id)
+
+                let matchingPins = try context.fetch(fetchRequest)
+                matchingPins.forEach { pin in
+                    pin.photos = []
+                }
 
                 try context.save()
             }

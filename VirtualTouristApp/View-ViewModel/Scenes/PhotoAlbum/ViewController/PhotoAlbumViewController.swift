@@ -4,6 +4,13 @@ import CoreLocation
 
 class PhotoAlbumViewController: UIViewController {
 
+    enum State {
+        case loading
+        case loaded
+        case noImages
+        case error
+    }
+
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var newCollectionButton: UIButton!
@@ -14,22 +21,20 @@ class PhotoAlbumViewController: UIViewController {
 
     var selectedPhotos: [String] = []
     var selectedPhotosIndex: [IndexPath] = []
-
     var selectedPhotosDic: [String: Int] = [:]
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-//        viewModel.refreshItems()
-//        viewModel.loadData()
-        viewModel.isPhotoAlbumAlreadyExists()
-        collectionView.dataSource = self
-        collectionView.delegate = self
+
+        navigationController?.isToolbarHidden = true
         updateActivityIndicator(loading: true)
-        toolBarActivityIndicator.isHidden = true
+        viewModel.refreshItems()
+        viewModel.checkIfAlbumHasImages()
+        updateToolBarButton(loading: false)
         trashButton.isHidden = true
-        collectionView.collectionViewLayout = createLayout()
-        collectionView.allowsMultipleSelection = true
+        setupCollectionView()
+
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -69,25 +74,28 @@ class PhotoAlbumViewController: UIViewController {
     }
 
 
-    func setEmptyMessage(_ message: String) {
-        let messageLabel = UILabel(frame: CGRect(x: 0, y: 0, width: collectionView.bounds.width, height: collectionView.bounds.size.height))
-        messageLabel.text = message
-        messageLabel.textColor = .black
-        messageLabel.numberOfLines = 0
-        messageLabel.textAlignment = .center
-        messageLabel.font = UIFont(name: "SF", size: 15)
-        messageLabel.sizeToFit()
-        collectionView.backgroundView = messageLabel
+    func setupCollectionView() {
+        collectionView.dataSource = self
+        collectionView.delegate = self
+        collectionView.collectionViewLayout = createLayout()
+        collectionView.allowsMultipleSelection = true
     }
 
-    func checkIfLocationHasImages() {
-        if viewModel.imagesUrlString.isEmpty {
-            setEmptyMessage("There is no photos in the location")
-            newCollectionButton.isEnabled = false
+    func setEmptyMessage(_ status: Bool) {
+        let messageLabel = UILabel(frame: CGRect(x: 0, y: 0, width: collectionView.bounds.width, height: collectionView.bounds.size.height))
+        if status == true {
+            messageLabel.isHidden = false
+            messageLabel.text = "There is no photos in the location"
+            messageLabel.textColor = .black
+            messageLabel.numberOfLines = 0
+            messageLabel.textAlignment = .center
+            messageLabel.font = UIFont(name: "SF", size: 15)
+            messageLabel.sizeToFit()
+            collectionView.backgroundView = messageLabel
         } else {
-            newCollectionButton.isEnabled = true
-            setEmptyMessage("")
+            messageLabel.isHidden = true
         }
+
     }
 
     func updateButtonsStatus() {
@@ -149,16 +157,16 @@ extension PhotoAlbumViewController: UICollectionViewDataSource {
 extension PhotoAlbumViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedPhoto = viewModel.imagesUrlString[indexPath.item]
-        selectedPhotos.append(selectedPhoto)
+//        let selectedPhoto = viewModel.imagesUrlString[indexPath.item]
+//        selectedPhotos.append(selectedPhoto)
         updateButtonsStatus()
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        let selectedPhoto = viewModel.imagesUrlString[indexPath.item]
-        if selectedPhotos.contains(selectedPhoto) {
-            selectedPhotos = selectedPhotos.filter { !$0.contains(selectedPhoto) }
-        }
+//        let selectedPhoto = viewModel.imagesUrlString[indexPath.item]
+//        if selectedPhotos.contains(selectedPhoto) {
+//            selectedPhotos = selectedPhotos.filter { !$0.contains(selectedPhoto) }
+//        }
         updateButtonsStatus()
     }
 }
@@ -176,15 +184,27 @@ extension PhotoAlbumViewController: PhotoAlbumViewModelDelegate {
                 self.updateToolBarButton(loading: false)
                 self.collectionView.isScrollEnabled = true
                 self.collectionView.reloadData()
-                self.checkIfLocationHasImages()
                 self.newCollectionButton.isEnabled = true
-                self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+                self.setEmptyMessage(false)
+//                self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
             }
         }
     }
 
-    func didLoadWithError() {
-        let alert = UIAlertController(title: "Error loading images", message: "Try again later", preferredStyle: .alert)
+    func didLoadWithNoImages() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+                self.updateActivityIndicator(loading: false)
+                self.updateToolBarButton(loading: false)
+                self.collectionView.isScrollEnabled = false
+                self.collectionView.reloadData()
+                self.setEmptyMessage(true)
+            print("there is no image in this location")
+        }
+    }
+
+    func didLoadWithError(_ error: Error) {
+        let alert = UIAlertController(title: "Error", message: "\(error.localizedDescription)", preferredStyle: .alert)
         let okAction = UIAlertAction(title: "Ok", style: .default)
 
         alert.addAction(okAction)

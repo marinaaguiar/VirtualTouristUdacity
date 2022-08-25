@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import Kingfisher
 import CoreData
+import MapKit
 
 protocol PhotoAlbumViewModelProtocol: AnyObject {
     var imagesUrlString: [String] { get }
@@ -10,15 +11,15 @@ protocol PhotoAlbumViewModelProtocol: AnyObject {
     func loadData()
     func refreshItems()
     func getPin(pinID: NSManagedObjectID)
-    func isPhotoAlbumAlreadyExists()
     func numberOfRows() -> Int
     func fillCell(atIndexPath indexPath: Int) -> PhotoCell
+    func checkIfAlbumHasImages()
 }
-
 
 protocol PhotoAlbumViewModelDelegate: AnyObject {
     func didLoad()
-    func didLoadWithError()
+    func didLoadWithNoImages()
+    func didLoadWithError(_ error: Error)
 }
 
 class PhotoAlbumViewModel: PhotoAlbumViewModelProtocol {
@@ -69,12 +70,17 @@ extension PhotoAlbumViewModel {
         }
     }
 
-    func isPhotoAlbumAlreadyExists() {
-        if let photos = pin.photos, photos.count != 0 {
-            print("The album already exists")
+    func checkIfAlbumHasImages() {
+        guard let photos = pin.photos else {
+            fatalError("Not able to fetch photos")
+        }
+
+        if photos.count != 0 {
+            print("The album has photos")
+            delegate?.didLoad()
         } else {
+            print("The album has no photos")
             loadData()
-            print("The album does not exist, it is necessary to load from the api")
         }
     }
 
@@ -150,20 +156,24 @@ extension PhotoAlbumViewModel {
             switch result {
             case .success(let data):
                 let flickrPhotos = data.photos.photo
-                self.saveImages(
-                    imagesUrl: flickrPhotos.map { photo in
-                        return self.apiService.buildPhotoURL(
-                            serverId: photo.server,
-                            photoId: photo.id,
-                            secretId: photo.secret
-                        )
-                    })
+                if flickrPhotos.count != 0 {
+                    self.saveImages(
+                        imagesUrl: flickrPhotos.map { photo in
+                            return self.apiService.buildPhotoURL(
+                                serverId: photo.server,
+                                photoId: photo.id,
+                                secretId: photo.secret
+                            )
+                        })
+                    self.delegate?.didLoad()
+                } else {
+                    self.delegate?.didLoadWithNoImages()
+                }
                 print("Loaded data sucessfully")
                 self.refreshItems()
-                self.delegate?.didLoad()
             case .failure(let error):
                 print("Fail to load data \(error.localizedDescription)")
-                self.delegate?.didLoadWithError()
+                self.delegate?.didLoadWithError(error)
             }
         }
     }

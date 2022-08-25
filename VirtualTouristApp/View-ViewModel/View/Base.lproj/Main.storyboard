@@ -133,11 +133,11 @@
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0pr-a2-GU3">
                                 <rect key="frame" x="12" y="836" width="390" height="38"/>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title="See more" titleAlignment="center">
+                                <buttonConfiguration key="configuration" style="plain" title="New Collection" titleAlignment="center">
                                     <fontDescription key="titleFontDescription" type="system" pointSize="20"/>
                                 </buttonConfiguration>
                                 <connections>
-                                    <action selector="seeMoreButtonPressed:" destination="7eE-f8-5Co" eventType="touchUpInside" id="a9f-TR-Yq2"/>
+                                    <action selector="newCollectionButtonPressed:" destination="7eE-f8-5Co" eventType="touchUpInside" id="yE3-cx-XIV"/>
                                 </connections>
                             </button>
                             <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="hiT-Wt-wae">
@@ -185,7 +185,7 @@
                     <connections>
                         <outlet property="activityIndicator" destination="JOp-vQ-I9d" id="FXA-MX-fe9"/>
                         <outlet property="collectionView" destination="pcd-wi-ziM" id="KgR-Ie-upe"/>
-                        <outlet property="newCollectionButton" destination="0pr-a2-GU3" id="bDT-8n-U8H"/>
+                        <outlet property="newCollectionButton" destination="0pr-a2-GU3" id="s38-7a-k0x"/>
                         <outlet property="toolBarActivityIndicator" destination="hiT-Wt-wae" id="RpN-hd-j6S"/>
                         <outlet property="trashButton" destination="QAO-XA-tz0" id="NDw-rh-RnN"/>
                     </connections>

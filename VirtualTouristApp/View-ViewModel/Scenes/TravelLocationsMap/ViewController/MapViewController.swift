@@ -72,6 +72,16 @@ class MapViewController: UIViewController {
         }
     }
 
+    func isTrashButtonHidden(_ status: Bool) {
+        if status == true {
+            trashImageView.isHidden = true
+            trashImageView.isUserInteractionEnabled = false
+        } else {
+            trashImageView.isHidden = false
+            trashImageView.isUserInteractionEnabled = true
+        }
+    }
+
     func createNewPin(coordinate: CLLocationCoordinate2D) {
         let uuid = UUID().uuidString
         let newPin = MapAnnotation(
@@ -165,10 +175,11 @@ extension MapViewController: MKMapViewDelegate {
         guard let annotation = view.annotation as? MapAnnotation else { return }
         switch newState {
         case .starting:
+            // IT SHOULD EMPTY THE PIN PHOTO ALBUM
+//            viewModel.clearPinPhotoAlbum(for: annotation.id)
             vibration.feedbackVibration(.soft)
         case .dragging:
-            trashImageView.isHidden = false
-            trashImageView.isUserInteractionEnabled = true
+            isTrashButtonHidden(false)
         case .ending:
             if isViewOverTrash(view) {
                 viewModel.deletePin(with: annotation.id)
@@ -179,7 +190,13 @@ extension MapViewController: MKMapViewDelegate {
             }
             vibration.feedbackVibration(.rigid)
             trashImageView.image = UIImage(named: "TrashIcon")
-            trashImageView.isHidden = true
+            isTrashButtonHidden(true)
+
+            // the pin should be updated with the new coordinate
+            // and the photo album be cleared to load new photos
+            // from the new location
+            viewModel.editPin(id: annotation.id, newlocation: annotation.coordinate)
+            presentPhotoAlbumViewController(pinAnnotation: annotation)
         default:
             break
         }
