@@ -44,7 +44,7 @@ private struct EndPoint {
                 value: "\(longitude)"),
             URLQueryItem(
                 name: QueryItem.perPage.rawValue,
-                value: "15"),
+                value: "30"),
             URLQueryItem(
                 name: QueryItem.page.rawValue,
                 value: "\(page)"),

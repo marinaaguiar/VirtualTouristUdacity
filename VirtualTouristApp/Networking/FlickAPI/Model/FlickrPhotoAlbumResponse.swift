@@ -8,6 +8,7 @@ struct FlickrPhotoAlbumResponse: Codable {
 struct FlickrPhotos: Codable {
     let page: Int
     let perpage: Int
+    let total: Int
     let photo: [FlickrPhotoID]
 }
 

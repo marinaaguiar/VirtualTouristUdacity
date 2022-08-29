@@ -16,6 +16,7 @@ class PhotoAlbumViewController: UIViewController {
     @IBOutlet weak var newCollectionButton: UIButton!
     @IBOutlet weak var toolBarActivityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var trashButton: UIButton!
+    @IBOutlet weak var toolBarView: UIView!
 
     var viewModel: PhotoAlbumViewModelProtocol!
 
@@ -35,7 +36,14 @@ class PhotoAlbumViewController: UIViewController {
         viewModel.refreshItems()
         viewModel.checkIfAlbumHasImages()
         updateToolBarButton(loading: false)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(true)
+        toolBarView.isHidden = true
+        newCollectionButton.isHidden = true
         trashButton.isHidden = true
+        toolBarActivityIndicator.isHidden = true
     }
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
@@ -67,8 +75,9 @@ class PhotoAlbumViewController: UIViewController {
         let deleteAlert = buildDeleteAlert {
             self.viewModel.deleteSelectedImages(indexPath: self.collectionView.indexPathsForSelectedItems!)
             self.viewModel.refreshItems()
+            self.collectionView.reloadData()
+            self.updateButtonsStatus()
         }
-
         self.show(deleteAlert, sender: nil)
     }
 
@@ -112,9 +121,11 @@ class PhotoAlbumViewController: UIViewController {
 
     func updateButtonsStatus() {
         if collectionView.indexPathsForSelectedItems != [] {
+            toolBarView.isHidden = false
             newCollectionButton.isHidden = true
             trashButton.isHidden = false
         } else {
+            toolBarView.isHidden = false
             newCollectionButton.isHidden = false
             trashButton.isHidden = true
         }
@@ -131,6 +142,7 @@ class PhotoAlbumViewController: UIViewController {
     }
 
     func updateToolBarButton(loading: Bool) {
+        toolBarView.isHidden = false 
         if loading {
             newCollectionButton.isHidden = true
             toolBarActivityIndicator.isHidden = false
@@ -212,6 +224,7 @@ extension PhotoAlbumViewController: PhotoAlbumViewModelDelegate {
                 self.collectionView.isScrollEnabled = false
                 self.collectionView.reloadData()
                 self.setEmptyMessage(true)
+                self.updateButtonsStatus()
             print("there is no image in this location")
         }
     }

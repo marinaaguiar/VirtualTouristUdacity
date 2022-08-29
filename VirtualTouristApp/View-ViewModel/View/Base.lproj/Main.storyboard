@@ -187,6 +187,7 @@
                         <outlet property="collectionView" destination="pcd-wi-ziM" id="KgR-Ie-upe"/>
                         <outlet property="newCollectionButton" destination="0pr-a2-GU3" id="s38-7a-k0x"/>
                         <outlet property="toolBarActivityIndicator" destination="hiT-Wt-wae" id="RpN-hd-j6S"/>
+                        <outlet property="toolBarView" destination="RZa-6d-xFZ" id="lMy-Rf-9Iv"/>
                         <outlet property="trashButton" destination="QAO-XA-tz0" id="NDw-rh-RnN"/>
                     </connections>
                 </viewController>
