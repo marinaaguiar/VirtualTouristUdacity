@@ -15,6 +15,7 @@ protocol PhotoAlbumViewModelProtocol: AnyObject {
     func fillCell(atIndexPath indexPath: Int) -> PhotoCell
     func checkIfAlbumHasImages()
     func updateAlbumCollection()
+    func deleteSelectedImages(indexPath: [IndexPath])
 }
 
 protocol PhotoAlbumViewModelDelegate: AnyObject {
@@ -125,14 +126,11 @@ extension PhotoAlbumViewModel {
     }
 
     func clearPhotoAlbum() {
-//        let request: NSFetchRequest<Photo> = Photo.fetchRequest()
-
         do {
             try storageService.performContainerAction { container in
                 let context = container.viewContext
 
                 let fetchRequest = Pin.fetchRequest()
-//                fetchRequest.predicate = NSPredicate(format: "pin = %@", pin)
 
                 let matchingPins = try context.fetch(fetchRequest)
                 try matchingPins.forEach { pin in
@@ -145,21 +143,22 @@ extension PhotoAlbumViewModel {
         }
     }
 
+    func deleteSelectedImages(indexPath: [IndexPath]) {
+        guard let photos = photos else { return }
 
-//    func deleteSelectedImages(indexPath: IndexPath) {
-//        guard let pins = pins else { return }
-//
-//        do {
-//            try storageService.performContainerAction { container in
-//
-//                let context = container.viewContext
-//                context.delete(pin.photos(indexPath))
-//                try context.save()
-//            }
-//        } catch {
-//            print("Could not delete \(error.localizedDescription)")
-//        }
-//    }
+        do {
+            try storageService.performContainerAction { container in
+
+                let context = container.viewContext
+                for index in indexPath {
+                    context.delete(photos[index.item])
+                }
+                try context.save()
+            }
+        } catch {
+            print("Could not delete \(error.localizedDescription)")
+        }
+    }
 
     func getPin(pinID: NSManagedObjectID) {
 
@@ -189,7 +188,6 @@ extension PhotoAlbumViewModel {
                     DispatchQueue.main.async {
                         self.apiService.getPhotosUrl(flickrPhotos) { result in
                             self.saveImages(imagesUrl: result)
-                            self.delegate?.didLoad()
                             self.refreshItems()
                         }
                     }

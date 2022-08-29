@@ -25,23 +25,17 @@ class PhotoAlbumViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupCollectionView()
+    }
 
-
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(true)
         navigationController?.isToolbarHidden = true
         updateActivityIndicator(loading: true)
         viewModel.refreshItems()
         viewModel.checkIfAlbumHasImages()
         updateToolBarButton(loading: false)
         trashButton.isHidden = true
-        setupCollectionView()
-
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        if isBeingDismissed {
-//            viewModel.saveAlbum(imagesUrl: viewModel.imagesUrlString)
-        }
     }
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
@@ -70,8 +64,26 @@ class PhotoAlbumViewController: UIViewController {
     }
 
     @IBAction func trashButtonPressed(_ sender: Any) {
-//        viewModel.delete
+        let deleteAlert = buildDeleteAlert {
+            self.viewModel.deleteSelectedImages(indexPath: self.collectionView.indexPathsForSelectedItems!)
+            self.viewModel.refreshItems()
+        }
+
+        self.show(deleteAlert, sender: nil)
     }
+
+    func buildDeleteAlert(onDelete: @escaping () -> Void) -> UIAlertController {
+        let alert = UIAlertController(title: "", message: "Are you sure you want to delete this photos permanently?", preferredStyle: .actionSheet
+        )
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak alert] _ in
+            onDelete()
+        }
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+        return alert
+    }
+
 
 
     func setupCollectionView() {
