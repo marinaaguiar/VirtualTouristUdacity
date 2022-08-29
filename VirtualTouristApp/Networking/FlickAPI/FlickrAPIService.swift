@@ -95,4 +95,12 @@ class FlickrAPIService {
 //        print(EndPoint.photo(serverId: serverId, photoId: photoId, secretId: secretId))
         return EndPoint.photo(serverId: serverId, photoId: photoId, secretId: secretId)
     }
+
+    func getPhotosUrl(_ flickrPhotos: [FlickrPhotoID], completion: @escaping ([String]) -> Void) {
+        var imagesUrl: [String] = []
+        flickrPhotos.map { photo in
+            imagesUrl.append(buildPhotoURL(serverId: photo.server, photoId: photo.id, secretId: photo.secret))
+        }
+        completion(imagesUrl)
+    }
 }

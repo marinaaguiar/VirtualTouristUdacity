@@ -66,11 +66,11 @@ class PhotoAlbumViewController: UIViewController {
     @IBAction func newCollectionButtonPressed(_ sender: UIButton) {
         collectionView.isScrollEnabled = false
         updateToolBarButton(loading: true)
-        viewModel.loadData()
+        viewModel.updateAlbumCollection()
     }
 
     @IBAction func trashButtonPressed(_ sender: Any) {
-
+//        viewModel.delete
     }
 
 
@@ -99,7 +99,7 @@ class PhotoAlbumViewController: UIViewController {
     }
 
     func updateButtonsStatus() {
-        if !selectedPhotos.isEmpty {
+        if collectionView.indexPathsForSelectedItems != [] {
             newCollectionButton.isHidden = true
             trashButton.isHidden = false
         } else {
@@ -128,6 +128,7 @@ class PhotoAlbumViewController: UIViewController {
             toolBarActivityIndicator.stopAnimating()
             toolBarActivityIndicator.isHidden = true
             newCollectionButton.isHidden = false
+            newCollectionButton.isEnabled = true 
         }
     }
 

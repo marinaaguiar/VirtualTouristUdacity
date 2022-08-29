@@ -14,6 +14,7 @@ protocol PhotoAlbumViewModelProtocol: AnyObject {
     func numberOfRows() -> Int
     func fillCell(atIndexPath indexPath: Int) -> PhotoCell
     func checkIfAlbumHasImages()
+    func updateAlbumCollection()
 }
 
 protocol PhotoAlbumViewModelDelegate: AnyObject {
@@ -114,17 +115,45 @@ extension PhotoAlbumViewModel {
         } catch {
             print(error.localizedDescription)
         }
-
     }
 
-//    func deleteImage(indexPathItem: Int) {
-//        guard let album = album else { return }
+    func updateAlbumCollection() {
+        DispatchQueue.main.async {
+            self.clearPhotoAlbum()
+            self.checkIfAlbumHasImages()
+        }
+    }
+
+    func clearPhotoAlbum() {
+//        let request: NSFetchRequest<Photo> = Photo.fetchRequest()
+
+        do {
+            try storageService.performContainerAction { container in
+                let context = container.viewContext
+
+                let fetchRequest = Pin.fetchRequest()
+//                fetchRequest.predicate = NSPredicate(format: "pin = %@", pin)
+
+                let matchingPins = try context.fetch(fetchRequest)
+                try matchingPins.forEach { pin in
+                    pin.photos = []
+                    try context.save()
+                }
+            }
+        } catch {
+            print("Error fetching data from context \(error)")
+        }
+    }
+
+
+//    func deleteSelectedImages(indexPath: IndexPath) {
+//        guard let pins = pins else { return }
 //
 //        do {
 //            try storageService.performContainerAction { container in
 //
 //                let context = container.viewContext
-//                context.delete(album[indexPathItem])
+//                context.delete(pin.photos(indexPath))
 //                try context.save()
 //            }
 //        } catch {
@@ -156,25 +185,51 @@ extension PhotoAlbumViewModel {
             switch result {
             case .success(let data):
                 let flickrPhotos = data.photos.photo
-                if flickrPhotos.count != 0 {
-                    self.saveImages(
-                        imagesUrl: flickrPhotos.map { photo in
-                            return self.apiService.buildPhotoURL(
-                                serverId: photo.server,
-                                photoId: photo.id,
-                                secretId: photo.secret
-                            )
-                        })
-                    self.delegate?.didLoad()
+                if !flickrPhotos.isEmpty {
+                    DispatchQueue.main.async {
+                        self.apiService.getPhotosUrl(flickrPhotos) { result in
+                            self.saveImages(imagesUrl: result)
+                            self.delegate?.didLoad()
+                            self.refreshItems()
+                        }
+                    }
                 } else {
                     self.delegate?.didLoadWithNoImages()
                 }
                 print("Loaded data sucessfully")
-                self.refreshItems()
             case .failure(let error):
                 print("Fail to load data \(error.localizedDescription)")
                 self.delegate?.didLoadWithError(error)
             }
         }
     }
+
+//    func loadData() {
+//        apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: 1) { result in
+//            switch result {
+//            case .success(let data):
+//                let flickrPhotos = data.photos.photo
+//                if !flickrPhotos.isEmpty {
+//                    self.saveImages(
+//                        imagesUrl: flickrPhotos.map { photo in
+//                            return self.apiService.buildPhotoURL(
+//                                serverId: photo.server,
+//                                photoId: photo.id,
+//                                secretId: photo.secret
+//                            )
+//                        })
+//                    self.delegate?.didLoad()
+//                } else {
+//                    self.delegate?.didLoadWithNoImages()
+//                }
+//                print("Loaded data sucessfully")
+//                self.refreshItems()
+//            case .failure(let error):
+//                print("Fail to load data \(error.localizedDescription)")
+//                self.delegate?.didLoadWithError(error)
+//            }
+//        }
+//    }
+
+    
 }
