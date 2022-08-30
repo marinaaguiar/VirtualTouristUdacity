@@ -65,7 +65,6 @@ extension PhotoAlbumViewModel {
                 let context = container.viewContext
                 let objects = try context.fetch(request)
                 self.photos = objects
-                self.delegate?.didLoad()
             }
         } catch {
             print("Error fetching data from context \(error)")
@@ -76,7 +75,6 @@ extension PhotoAlbumViewModel {
         guard let photos = pin.photos else {
             fatalError("Not able to fetch photos")
         }
-
         if photos.count != 0 {
             print("The album has photos")
             delegate?.didLoad()
@@ -153,7 +151,9 @@ extension PhotoAlbumViewModel {
                 for index in indexPath {
                     context.delete(photos[index.item])
                 }
+
                 try context.save()
+                refreshItems()
             }
         } catch {
             print("Could not delete \(error.localizedDescription)")
@@ -189,6 +189,7 @@ extension PhotoAlbumViewModel {
                         self.apiService.getPhotosUrl(flickrPhotos) { result in
                             self.saveImages(imagesUrl: result)
                             self.refreshItems()
+                            self.delegate?.didLoad()
                         }
                     }
                 } else {
@@ -201,33 +202,4 @@ extension PhotoAlbumViewModel {
             }
         }
     }
-
-//    func loadData() {
-//        apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: 1) { result in
-//            switch result {
-//            case .success(let data):
-//                let flickrPhotos = data.photos.photo
-//                if !flickrPhotos.isEmpty {
-//                    self.saveImages(
-//                        imagesUrl: flickrPhotos.map { photo in
-//                            return self.apiService.buildPhotoURL(
-//                                serverId: photo.server,
-//                                photoId: photo.id,
-//                                secretId: photo.secret
-//                            )
-//                        })
-//                    self.delegate?.didLoad()
-//                } else {
-//                    self.delegate?.didLoadWithNoImages()
-//                }
-//                print("Loaded data sucessfully")
-//                self.refreshItems()
-//            case .failure(let error):
-//                print("Fail to load data \(error.localizedDescription)")
-//                self.delegate?.didLoadWithError(error)
-//            }
-//        }
-//    }
-
-    
 }

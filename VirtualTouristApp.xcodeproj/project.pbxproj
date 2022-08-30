@@ -187,7 +187,6 @@
 			children = (
 				9C58F5FA28A2C2DB008DDE1C /* ViewController */,
 				9C58F60228A3B922008DDE1C /* ViewModel */,
-				9C58F5FB28A2C2F3008DDE1C /* Model */,
 			);
 			path = PhotoAlbum;
 			sourceTree = "<group>";
@@ -215,13 +214,6 @@
 				9CB1378D28B777AE000E76E1 /* Component */,
 			);
 			path = ViewController;
-			sourceTree = "<group>";
-		};
-		9C58F5FB28A2C2F3008DDE1C /* Model */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Model;
 			sourceTree = "<group>";
 		};
 		9C58F60228A3B922008DDE1C /* ViewModel */ = {

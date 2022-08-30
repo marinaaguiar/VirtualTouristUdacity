@@ -6,7 +6,6 @@ class MapViewController: UIViewController {
 
     private lazy var viewModel: MapViewModelProtocol = MapViewModel(delegate: self)
     private var vibration = Vibration()
-//    var pinsArray: [MKPointAnnotation] = []
 
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var trashImageView: UIImageView!
@@ -175,8 +174,6 @@ extension MapViewController: MKMapViewDelegate {
         guard let annotation = view.annotation as? MapAnnotation else { return }
         switch newState {
         case .starting:
-            // IT SHOULD EMPTY THE PIN PHOTO ALBUM
-//            viewModel.clearPinPhotoAlbum(for: annotation.id)
             vibration.feedbackVibration(.soft)
         case .dragging:
             isTrashButtonHidden(false)
@@ -191,7 +188,6 @@ extension MapViewController: MKMapViewDelegate {
             vibration.feedbackVibration(.rigid)
             trashImageView.image = UIImage(named: "TrashIcon")
             isTrashButtonHidden(true)
-
             // the pin should be updated with the new coordinate
             // and the photo album be cleared to load new photos
             // from the new location

@@ -10,13 +10,11 @@ protocol MapViewModelProtocol: AnyObject {
     func saveNewPin(id: String, location: CLLocationCoordinate2D)
     func getStoredUserRegion() -> Region?
     func setupRegion(in mapView: MKMapView)
-//    func getObjectID(for pinID: String) -> NSManagedObjectID?
     func getObjectID(for id: String) -> NSManagedObjectID?
     func getPins() -> [Pin]?
     func deletePin(with id: String)
     func editPin(id: String, newlocation: CLLocationCoordinate2D)
     func clearPinPhotoAlbum(for id: String)
-//    func setPin(with id: String)
 }
 
 protocol MapViewModelDelegate: AnyObject {
@@ -30,7 +28,6 @@ class MapViewModel: MapViewModelProtocol {
     private let defaults = UserDefaults.standard
 
     private var pins: [Pin]?
-    private var pin: Pin!
 
     init(delegate: MapViewModelDelegate?) {
         self.delegate = delegate
@@ -161,24 +158,6 @@ class MapViewModel: MapViewModelProtocol {
         print("PIN SELECTED ID: \(pinSelected.first?.objectID)")
         return pinSelected.first?.objectID
     }
-
-    //    func setPin(with id: String) {
-    //        guard let pins = pins else { return }
-    //
-    //        let pinSelected = pins.filter { $0.id == id }
-    //
-    //        guard let pinSelected = pinSelected.first else { return }
-    //
-    //        let objectID = pinSelected.objectID
-    //
-    //        try! storageService.performContainerAction { container in
-    //            let context = container.viewContext
-    //            let pin = context.object(with: objectID) as! Pin
-    //
-    //            self.pin = pin
-    //            print(pin.id)
-    //        }
-    //    }
 
     // MARK: - Map Region
 

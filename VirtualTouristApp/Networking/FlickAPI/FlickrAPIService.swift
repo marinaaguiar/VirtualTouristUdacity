@@ -79,8 +79,6 @@ class FlickrAPIService {
             completion(.failure(APIError.failedToConstructURL))
             return
         }
-//        print(url)
-
         NetworkingService().fetchGenericData(
             url: url,
             completion: completion
@@ -92,7 +90,6 @@ class FlickrAPIService {
         photoId: String,
         secretId: String
     ) -> String {
-//        print(EndPoint.photo(serverId: serverId, photoId: photoId, secretId: secretId))
         return EndPoint.photo(serverId: serverId, photoId: photoId, secretId: secretId)
     }
 
