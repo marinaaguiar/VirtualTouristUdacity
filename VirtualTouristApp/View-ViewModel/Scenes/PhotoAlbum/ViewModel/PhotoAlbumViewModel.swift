@@ -180,7 +180,7 @@ extension PhotoAlbumViewModel {
 extension PhotoAlbumViewModel {
 
     func loadData() {
-        apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: 1) { result in
+        apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: Int.random(in: 1..<10)) { result in
             switch result {
             case .success(let data):
                 let flickrPhotos = data.photos.photo

@@ -57,8 +57,8 @@ class PhotoAlbumViewController: UIViewController {
         collectionView.isScrollEnabled = false
         updateToolBarButtons(loading: true)
         viewModel.updateAlbumCollection()
-//        let indexPath = IndexPath(item: 0, section: 0)
-//        collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+        let indexPath = IndexPath(item: 0, section: 0)
+        collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
 
     }
 
