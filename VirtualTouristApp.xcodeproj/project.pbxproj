@@ -232,6 +232,7 @@
 				9C465AF428C6450400FAA3B9 /* APIConstant.swift */,
 				9C58F62728A51D17008DDE1C /* FlickrAPIService.swift */,
 				9C58F62928A51D23008DDE1C /* Model */,
+				9C465AF228C6347500FAA3B9 /* Keys.plist */,
 			);
 			path = FlickAPI;
 			sourceTree = "<group>";
@@ -325,6 +326,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9C465AF328C6347500FAA3B9 /* Keys.plist in Resources */,
 				9C2D2B352885712F00AB30F8 /* LaunchScreen.storyboard in Resources */,
 				9C2D2B322885712F00AB30F8 /* Assets.xcassets in Resources */,
 				9C2D2B2D2885712E00AB30F8 /* Main.storyboard in Resources */,
