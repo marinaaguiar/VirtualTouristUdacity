@@ -1,8 +1,10 @@
 # Created by https://www.toptal.com/developers/gitignore/api/swift,macos,xcode,appcode,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=swift,macos,xcode,appcode,visualstudiocode
 
-### APIKey ###
-APIConstants.swift
+## User settings
+VirtualTouristApp/Networking/FlickAPI/APIConstant.swift
+xcuserdata/
+.DS_Store
 
 ### AppCode ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
