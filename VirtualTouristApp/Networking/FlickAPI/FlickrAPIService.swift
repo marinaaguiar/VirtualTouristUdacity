@@ -2,7 +2,7 @@ import Foundation
 import CoreLocation
 
 private struct FlickrAPIDefinitions {
-    static let APIKey = APIConstants.APIKey
+    static let APIKey = AppConfiguration.shared.apiKey
     static let searchMethod = "flickr.photos.search"
     static let format = "json"
 }
