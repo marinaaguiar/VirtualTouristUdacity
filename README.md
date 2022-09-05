@@ -13,4 +13,4 @@ The Virtual Tourist app downloads and stores images from Flickr. The app allows 
 
 ## How it works
 
-![output 6](https://user-images.githubusercontent.com/74434212/187438982-818bd9f3-9637-4617-9aa1-2586404875eb.gif)
+![output 7](https://user-images.githubusercontent.com/74434212/188460868-04ac0d71-acb5-4938-98e1-509563b349b0.gif)
