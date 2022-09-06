@@ -9,10 +9,10 @@ struct FlickrPhotos: Codable {
     let page: Int
     let perpage: Int
     let total: Int
-    let photo: [FlickrPhotoID]
+    let photo: [FlickrPhotoInfo]
 }
 
-struct FlickrPhotoID: Codable {
+struct FlickrPhotoInfo: Codable {
     let id: String
     let secret: String
     let server: String

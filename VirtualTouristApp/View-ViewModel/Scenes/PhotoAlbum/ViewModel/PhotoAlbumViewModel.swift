@@ -8,7 +8,7 @@ protocol PhotoAlbumViewModelProtocol: AnyObject {
     var imagesUrlString: [String] { get }
     var photos: [Photo]? { get }
     var isLoading: Bool { get }
-    func loadData()
+//    func loadData()
     func refreshItems()
     func getPin(pinID: NSManagedObjectID)
     func numberOfRows() -> Int
@@ -36,6 +36,9 @@ class PhotoAlbumViewModel: PhotoAlbumViewModelProtocol {
 
     private var latitude: Double
     private var longitude: Double
+
+    private var loadedImages = [URL: UIImage]()
+    private var runningRequests = [UUID: URLSessionDataTask]()
 
     private let storageService = DataController.shared
     private var pin: Pin!
@@ -179,27 +182,108 @@ extension PhotoAlbumViewModel {
 
 extension PhotoAlbumViewModel {
 
-    func loadData() {
-        apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: Int.random(in: 1..<10)) { result in
+
+    func loadPhotoList(completion: @escaping (Result<[FlickrPhotoInfo], Error>) -> Void) {
+
+        apiService.getFlickrPhotoResponse(
+            coordinate: .init(
+                latitude: latitude,
+                longitude: longitude
+            ),
+            page: Int.random(in: 1..<10)
+        ) { result in
+
             switch result {
             case .success(let data):
                 let flickrPhotos = data.photos.photo
-                if !flickrPhotos.isEmpty {
-                    DispatchQueue.main.async {
-                        self.apiService.getPhotosUrl(flickrPhotos) { result in
-                            self.saveImages(imagesUrl: result)
-                            self.refreshItems()
-                            self.delegate?.didLoad()
-                        }
-                    }
-                } else {
-                    self.delegate?.didLoadWithNoImages()
-                }
-                print("Loaded data sucessfully")
+                completion(.success(flickrPhotos))
             case .failure(let error):
-                print("Fail to load data \(error.localizedDescription)")
+                print("Fail to load list photo data \(error.localizedDescription)")
                 self.delegate?.didLoadWithError(error)
             }
         }
     }
+
+    func loadPhotosUrls(completion: @escaping (Result<[String], Error>) -> Void) {
+        loadPhotoList { result in
+
+            switch result {
+            case .success(let flickrPhotos):
+                if !flickrPhotos.isEmpty {
+                    self.apiService.getPhotosUrl(flickrPhotos) { photoUrls in
+                        completion(.success(photoUrls))
+                    }
+                } else {
+                    self.delegate?.didLoadWithNoImages()
+                }
+            case .failure(let error):
+                print("Fail to load photo urls data \(error.localizedDescription)")
+                self.delegate?.didLoadWithError(error)
+            }
+        }
+    }
+
+    func loadImage(_ url: URL, _ completion: @escaping (Result<UIImage, Error>) -> Void) -> UUID? {
+
+        let uuid = UUID()
+
+        if let image = loadedImages[url] {
+            completion(.success(image))
+            return nil
+        }
+
+        let task = URLSession.shared.dataTask(with: url)
+        { data, response, error in
+            defer {self.runningRequests.removeValue(forKey: uuid) }
+
+            if let data = data, let image = UIImage(data: data) {
+                self.loadedImages[url] = image
+                completion(.success(image))
+                return
+            }
+
+            guard let error = error else {
+                fatalError("Not able to fetch data")
+                return
+            }
+
+            guard (error as NSError).code == NSURLErrorCancelled else {
+                completion(.failure(error))
+                return
+            }
+        }
+        task.resume()
+
+        runningRequests[uuid] = task
+        return uuid
+    }
+
+    func cancelLoad(_ uuid: UUID) {
+        runningRequests[uuid]?.cancel()
+        runningRequests.removeValue(forKey: uuid)
+    }
+
+//    func loadData() {
+//        apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: Int.random(in: 1..<10)) { result in
+//            switch result {
+//            case .success(let data):
+//                let flickrPhotos = data.photos.photo
+//                if !flickrPhotos.isEmpty {
+//                    DispatchQueue.main.async {
+//                        self.apiService.getPhotosUrl(flickrPhotos) { result in
+//                            self.saveImages(imagesUrl: result)
+//                            self.refreshItems()
+//                            self.delegate?.didLoad()
+//                        }
+//                    }
+//                } else {
+//                    self.delegate?.didLoadWithNoImages()
+//                }
+//                print("Loaded data sucessfully")
+//            case .failure(let error):
+//                print("Fail to load data \(error.localizedDescription)")
+//                self.delegate?.didLoadWithError(error)
+//            }
+//        }
+//    }
 }
