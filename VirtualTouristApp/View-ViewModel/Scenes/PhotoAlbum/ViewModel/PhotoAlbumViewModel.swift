@@ -3,6 +3,7 @@ import UIKit
 import Kingfisher
 import CoreData
 import MapKit
+import SwiftUI
 
 protocol PhotoAlbumViewModelProtocol: AnyObject {
     var imagesUrlString: [String] { get }
@@ -16,6 +17,8 @@ protocol PhotoAlbumViewModelProtocol: AnyObject {
     func checkIfAlbumHasImages()
     func updateAlbumCollection()
     func deleteSelectedImages(indexPath: [IndexPath])
+    func loadPhotosUrls(completion: @escaping (Result<[String], Error>) -> Void)
+    func saveImage(image: UIImage) 
 }
 
 protocol PhotoAlbumViewModelDelegate: AnyObject {
@@ -68,6 +71,7 @@ extension PhotoAlbumViewModel {
                 let context = container.viewContext
                 let objects = try context.fetch(request)
                 self.photos = objects
+                delegate?.didLoad()
             }
         } catch {
             print("Error fetching data from context \(error)")
@@ -83,7 +87,7 @@ extension PhotoAlbumViewModel {
             delegate?.didLoad()
         } else {
             print("The album has no photos")
-            loadData()
+//            loadData()
         }
     }
 
@@ -95,29 +99,51 @@ extension PhotoAlbumViewModel {
         guard let photos = photos else {
             fatalError("Not able to get photos")
         }
-        let photo = photos[indexPath]
-        return PhotoCell(imageUrl: photo.url)
+        if let photo = photos[indexPath].image {
+            return PhotoCell(image: UIImage(data: photo)!)
+        } else {
+            return PhotoCell(image: UIImage(named: ""))
+        }
     }
 
-    func saveImages(imagesUrl: [String]) {
+//    func saveImages(imagesUrl: [String]) {
+//        do {
+//            try storageService.performContainerAction { container in
+//                let context = container.viewContext
+//
+//                for imageUrl in imagesUrl {
+//                    let newPhoto = Photo(context: context)
+//                    newPhoto.url = imageUrl
+//                    newPhoto.pin = pin
+//
+//                    // Save the data
+//                    context.insert(newPhoto)
+//                    try context.save()
+//                }
+//            }
+//        } catch {
+//            print(error.localizedDescription)
+//        }
+//    }
+
+    func saveImage(image: UIImage) {
         do {
             try storageService.performContainerAction { container in
                 let context = container.viewContext
 
-                for imageUrl in imagesUrl {
-                    let newPhoto = Photo(context: context)
-                    newPhoto.url = imageUrl
-                    newPhoto.pin = pin
+                let newPhoto = Photo(context: context)
+                newPhoto.image = image.jpegData(compressionQuality: 0.9)
+                newPhoto.pin = pin
 
-                    // Save the data
-                    context.insert(newPhoto)
-                    try context.save()
-                }
+                // Save the data
+                context.insert(newPhoto)
+                try context.save()
             }
         } catch {
             print(error.localizedDescription)
         }
     }
+
 
     func updateAlbumCollection() {
         DispatchQueue.main.async {
@@ -182,7 +208,6 @@ extension PhotoAlbumViewModel {
 
 extension PhotoAlbumViewModel {
 
-
     func loadPhotoList(completion: @escaping (Result<[FlickrPhotoInfo], Error>) -> Void) {
 
         apiService.getFlickrPhotoResponse(
@@ -210,7 +235,8 @@ extension PhotoAlbumViewModel {
             switch result {
             case .success(let flickrPhotos):
                 if !flickrPhotos.isEmpty {
-                    self.apiService.getPhotosUrl(flickrPhotos) { photoUrls in
+                    self.apiService.getPhotosUrl(flickrPhotos) { [self] photoUrls in
+//                        self.delegate?.didLoad()
                         completion(.success(photoUrls))
                     }
                 } else {
@@ -223,45 +249,34 @@ extension PhotoAlbumViewModel {
         }
     }
 
-    func loadImage(_ url: URL, _ completion: @escaping (Result<UIImage, Error>) -> Void) -> UUID? {
+//    func handleImage(photoUrl: String) {
+//        let token = self.loadImage(photoUrl) { result in
+//            do {
+//                let image = try result.get()
+//                DispatchQueue.main.async {
+//                    self.saveImage(image: image)
+////                  cell.cellImageView.image = image
+//                }
+//            } catch {
+//                print(error)
+//            }
+//        }
+//
+//        loaderImageOn(token: token)
+//    }
 
-        let uuid = UUID()
-
-        if let image = loadedImages[url] {
-            completion(.success(image))
-            return nil
-        }
-
-        let task = URLSession.shared.dataTask(with: url)
-        { data, response, error in
-            defer {self.runningRequests.removeValue(forKey: uuid) }
-
-            if let data = data, let image = UIImage(data: data) {
-                self.loadedImages[url] = image
-                completion(.success(image))
-                return
-            }
-
-            guard let error = error else {
-                fatalError("Not able to fetch data")
-                return
-            }
-
-            guard (error as NSError).code == NSURLErrorCancelled else {
-                completion(.failure(error))
-                return
-            }
-        }
-        task.resume()
-
-        runningRequests[uuid] = task
-        return uuid
-    }
-
-    func cancelLoad(_ uuid: UUID) {
-        runningRequests[uuid]?.cancel()
-        runningRequests.removeValue(forKey: uuid)
-    }
+//    func loadData() {
+//        loadPhotosUrls { result in
+//            switch result {
+//            case .success(let photosUrl):
+//                for photoUrl in photosUrl {
+//                    self.handleImage(photoUrl: photoUrl)
+//                }
+//            case .failure(let error):
+//                self.delegate?.didLoadWithError(error)
+//            }
+//        }
+//    }
 
 //    func loadData() {
 //        apiService.loadPhotoList(coordinate: .init(latitude: latitude, longitude: longitude), page: Int.random(in: 1..<10)) { result in
