@@ -71,7 +71,7 @@ class FlickrAPIService {
         case wrongEncoding
     }
 
-    func getFlickrPhotoResponse(
+    func loadPhotoList(
         coordinate: CLLocationCoordinate2D,
         page: Int,
         completion: @escaping (Result<FlickrPhotoAlbumResponse, Error>) -> Void
@@ -102,52 +102,3 @@ class FlickrAPIService {
         completion(imagesUrl)
     }
 }
-
-//class FlickrAPIService {
-//    enum APIError: Swift.Error {
-//        case failedToConstructURL
-//        case wrongEncoding
-//    }
-//
-//    func getFlickrPhotoURLs(
-//        latitude: Double,
-//        longitude: Double,
-//        page: Int,
-//        completion: @escaping (Result<[String], Error>) -> Void
-//    ) {
-//        let possibleURL = EndPoint.list(
-//            latitude: latitude,
-//            longitude: longitude,
-//            page: page
-//        )
-//
-//        guard let url = possibleURL else {
-//            completion(.failure(APIError.failedToConstructURL))
-//            return
-//        }
-//
-//        NetworkingService().fetchGenericData(
-//            url: url,
-//            completion: { (result: Result<FlickrPhotoAlbumResponse, Error>) in
-//                // Here, we take the photo album result and map every photo into
-//                // an URL, so we can get at the photos straight away.
-//
-//                let mappedResult = result.map { photoAlbumResponse in
-//                    photoAlbumResponse.photos.photo.map { photoInfo in
-//                        EndPoint.photo(photoInfo: photoInfo)
-//                    }
-//                }
-//
-//                completion(mappedResult)
-//            }
-//        )
-//    }
-//
-//    func getData(from urlString: String, completion: @escaping (Result<Data, Error>) -> Void) {
-//        if let url = URL(string: urlString) {
-//            NetworkingService().fetchData(url: url, completion: completion)
-//        } else {
-//            completion(.failure(APIError.failedToConstructURL))
-//        }
-//    }
-//}

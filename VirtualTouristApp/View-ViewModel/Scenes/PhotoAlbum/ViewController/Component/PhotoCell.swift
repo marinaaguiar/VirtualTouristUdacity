@@ -5,8 +5,7 @@ import Kingfisher
 //MARK: - CollectionViewCell
 
 struct PhotoCell {
-//    let imageUrl: String?
-    let image: UIImage?
+    let imageUrl: String?
 }
 
 class CollectionViewCell: UICollectionViewCell {
@@ -14,7 +13,7 @@ class CollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var checkMark: UIImageView!
     @IBOutlet weak var cellActivityIndicator: UIActivityIndicatorView!
 
-    var viewModel: PhotoAlbumViewModelProtocol!
+    private var currentLoadID: UUID?
 
     override var isSelected: Bool {
         didSet {
@@ -29,17 +28,14 @@ class CollectionViewCell: UICollectionViewCell {
         }
     }
 
-    var onReuse: () -> Void = {}
-
-    override func prepareForReuse() {
-      super.prepareForReuse()
-        cellImageView.image = nil
-        cellImageView.cancelImageLoad()
-    }
-
     override func awakeFromNib() {
         super.awakeFromNib()
         isSelected = false
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        self.currentLoadID = nil
     }
 
     private func updateActivityIndicatorStatus(isLoading: Bool) {
@@ -54,40 +50,26 @@ class CollectionViewCell: UICollectionViewCell {
 
     func fill(_ cell: PhotoCell) {
         updateActivityIndicatorStatus(isLoading: true)
-        DispatchQueue.main.async {
-            if let image = cell.image {
-                self.cellImageView.image = image
-                self.updateActivityIndicatorStatus(isLoading: false)
-                self.setNeedsLayout()
-            } else {
-                print("there is no image saved is CoreData")
+
+        self.currentLoadID = PhotoCache.shared.fetchImage(urlString: cell.imageUrl!) { loadResult in
+            DispatchQueue.main.async {
+                self.handleLoad(loadResult: loadResult)
             }
         }
     }
 
-    func loadData(completion: @escaping () -> Void) {
-        viewModel.loadPhotosUrls { result in
-            switch result {
-            case .success(let photosUrl):
-                for photoUrl in photosUrl {
-                    self.cellImageView.loadImage(at: photoUrl)
-                    self.updateActivityIndicatorStatus(isLoading: false)
-                }
-            case .failure(let error):
-                print("error to catch the photosUrl \(error)")
-                break
-//                    self.delegate?.didLoadWithError(error)
-            }
+    func handleLoad(loadResult: PhotoLoadResult) {
+        updateActivityIndicatorStatus(isLoading: false)
+
+        switch loadResult.result {
+        case .success(let image):
+            self.cellImageView.image = image
+            self.cellImageView.contentMode = .scaleAspectFill
+        case .failure:
+            let image = UIImage(systemName: "exclamationmark.triangle.fill")
+            self.cellImageView.image = image
+            self.cellImageView.tintColor = .darkGray
+            self.cellImageView.contentMode = .center
         }
-    }    
-}
-
-extension UIImageView {
-  func loadImage(at url: String) {
-    UIImageLoader.loader.load(url, for: self)
-  }
-
-  func cancelImageLoad() {
-    UIImageLoader.loader.cancel(for: self)
-  }
+    }
 }

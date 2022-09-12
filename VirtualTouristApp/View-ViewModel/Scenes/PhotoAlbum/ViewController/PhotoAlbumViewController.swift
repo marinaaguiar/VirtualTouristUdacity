@@ -21,9 +21,10 @@ class PhotoAlbumViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
         navigationController?.isToolbarHidden = true
+        navigationController?.isToolbarHidden = true
         updateActivityIndicator(loading: true)
         viewModel.refreshItems()
-//        viewModel.checkIfAlbumHasImages()
+        viewModel.checkIfAlbumHasImages()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -157,11 +158,7 @@ class PhotoAlbumViewController: UIViewController {
     func cell(_ collectionView: UICollectionView, indexPath: IndexPath, photoCell: PhotoCell) -> UICollectionViewCell {
 
         let cell = collectionView.dequeCell(CollectionViewCell.self, indexPath)
-
-        cell.loadData {
-            cell.fill(photoCell)
-            self.didLoad()
-        }
+        cell.fill(photoCell)
         return cell
     }
 }
@@ -200,10 +197,10 @@ extension PhotoAlbumViewController: PhotoAlbumViewModelDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             if !self.viewModel.isLoading {
-                self.collectionView.reloadData()
                 self.updateActivityIndicator(loading: false)
                 self.updateToolBarButtons(loading: false)
                 self.collectionView.isScrollEnabled = true
+                self.collectionView.reloadData()
                 self.newCollectionButton.isEnabled = true
                 self.setEmptyMessage(false)
             }
