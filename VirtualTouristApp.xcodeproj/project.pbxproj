@@ -92,11 +92,9 @@
 		9C2D2B242885712E00AB30F8 /* VirtualTouristApp */ = {
 			isa = PBXGroup;
 			children = (
-				9C2D2B512885AF9100AB30F8 /* Constants.swift */,
-				9C58F5F228A270C5008DDE1C /* CompositionalLayout.swift */,
-				9CE4DA2828917F700049506F /* Vibration.swift */,
 				9CE4DA23289141260049506F /* Networking */,
 				9C2D2B3C2885713700AB30F8 /* Extensions */,
+				9CF7F05328CF76B10099B505 /* Common */,
 				9C2D2B412885715C00AB30F8 /* Model */,
 				9C2D2B402885715500AB30F8 /* View-ViewModel */,
 				9C2D2B3E2885714600AB30F8 /* AppDelegate */,
@@ -262,6 +260,16 @@
 				9C58F62628A51D07008DDE1C /* FlickAPI */,
 			);
 			path = Networking;
+			sourceTree = "<group>";
+		};
+		9CF7F05328CF76B10099B505 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				9C2D2B512885AF9100AB30F8 /* Constants.swift */,
+				9C58F5F228A270C5008DDE1C /* CompositionalLayout.swift */,
+				9CE4DA2828917F700049506F /* Vibration.swift */,
+			);
+			path = Common;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

@@ -124,20 +124,27 @@ extension PhotoAlbumViewModel {
     }
 
     func clearPhotoAlbum() {
+        guard let id = pin.id else {
+            return
+        }
         do {
             try storageService.performContainerAction { container in
                 let context = container.viewContext
 
+                // we get all pins matching the ID we have
                 let fetchRequest = Pin.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "id == %@", id)
 
+                // when we delete each pin. we expect that we'll have either
+                // 0 or 1 matching pin, but we have to handle the possibility
+                // of more, as the database doesn't know we can only have one.
                 let matchingPins = try context.fetch(fetchRequest)
-                try matchingPins.forEach { pin in
-                    pin.photos = []
-                    try context.save()
-                }
+                matchingPins.forEach { pin in context.delete(pin) }
+
+                try context.save()
             }
         } catch {
-            print("Error fetching data from context \(error)")
+            print("Could not delete \(error.localizedDescription)")
         }
     }
 

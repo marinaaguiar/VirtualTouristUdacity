@@ -14,7 +14,6 @@ protocol MapViewModelProtocol: AnyObject {
     func getPins() -> [Pin]?
     func deletePin(with id: String)
     func editPin(id: String, newlocation: CLLocationCoordinate2D)
-    func clearPinPhotoAlbum(for id: String)
 }
 
 protocol MapViewModelDelegate: AnyObject {
@@ -28,6 +27,7 @@ class MapViewModel: MapViewModelProtocol {
     private let defaults = UserDefaults.standard
 
     private var pins: [Pin]?
+    private var photos: [Photo]?
 
     init(delegate: MapViewModelDelegate?) {
         self.delegate = delegate
@@ -80,7 +80,7 @@ class MapViewModel: MapViewModelProtocol {
     }
 
     func editPin(id: String, newlocation: CLLocationCoordinate2D) {
-        guard let pins = pins else { return }
+
         do {
             try storageService.performContainerAction { container in
                 let context = container.viewContext
@@ -92,9 +92,12 @@ class MapViewModel: MapViewModelProtocol {
                 matchingPins.forEach { pin in
                     pin.latitude = newlocation.latitude
                     pin.longitude = newlocation.longitude
-                    pin.photos = []
-                }
 
+                    pin.photos?.forEach({ object in
+                        guard let photo = object as? Photo else { return }
+                        context.delete(photo)
+                    })
+                }
                 try context.save()
             }
         } catch {
@@ -118,32 +121,11 @@ class MapViewModel: MapViewModelProtocol {
                 let fetchRequest = Pin.fetchRequest()
                 fetchRequest.predicate = NSPredicate(format: "id == %@", id)
 
-                // we delete each pin. we expect that we'll have either
+                // when we delete each pin. we expect that we'll have either
                 // 0 or 1 matching pin, but we have to handle the possibility
                 // of more, as the database doesn't know we can only have one.
                 let matchingPins = try context.fetch(fetchRequest)
                 matchingPins.forEach { pin in context.delete(pin) }
-
-                try context.save()
-            }
-        } catch {
-            print("Could not delete \(error.localizedDescription)")
-        }
-    }
-
-    func clearPinPhotoAlbum(for id: String) {
-        guard let pins = pins else { return }
-        do {
-            try storageService.performContainerAction { container in
-                let context = container.viewContext
-
-                let fetchRequest = Pin.fetchRequest()
-                fetchRequest.predicate = NSPredicate(format: "id == %@", id)
-
-                let matchingPins = try context.fetch(fetchRequest)
-                matchingPins.forEach { pin in
-                    pin.photos = []
-                }
 
                 try context.save()
             }
