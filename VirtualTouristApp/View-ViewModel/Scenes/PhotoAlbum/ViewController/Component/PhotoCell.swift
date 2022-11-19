@@ -5,7 +5,7 @@ import Kingfisher
 //MARK: - CollectionViewCell
 
 struct PhotoCell {
-    let imageUrl: String?
+    let imageUrl: String
 }
 
 class CollectionViewCell: UICollectionViewCell {
@@ -51,7 +51,7 @@ class CollectionViewCell: UICollectionViewCell {
     func fill(_ cell: PhotoCell) {
         updateActivityIndicatorStatus(isLoading: true)
 
-        self.currentLoadID = PhotoCache.shared.fetchImage(urlString: cell.imageUrl!) { loadResult in
+        self.currentLoadID = PhotoCache.shared.fetchImage(urlString: cell.imageUrl) { loadResult in
             DispatchQueue.main.async {
                 self.handleLoad(loadResult: loadResult)
             }

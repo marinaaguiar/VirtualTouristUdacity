@@ -93,7 +93,7 @@ extension PhotoAlbumViewModel {
             fatalError("Not able to get photos")
         }
         let photo = photos[indexPath]
-        return PhotoCell(imageUrl: photo.url)
+        return PhotoCell(imageUrl: photo.url!)
     }
 
     func saveImages(imagesUrl: [String]) {

@@ -87,8 +87,10 @@ private extension PhotoCache {
                 let predicate = NSPredicate(format: "url = %@", urlString)
                 request.predicate = predicate
 
-                let photo = try? backgroundContext.fetch(request).first
-                photo?.image = data
+                try! backgroundContext.fetch(request).forEach { photo in
+                    photo.image = data
+                }
+
                 try! context.save()
             }
         }
