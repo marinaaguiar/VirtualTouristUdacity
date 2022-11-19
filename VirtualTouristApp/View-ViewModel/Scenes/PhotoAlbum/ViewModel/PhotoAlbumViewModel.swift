@@ -139,7 +139,15 @@ extension PhotoAlbumViewModel {
                 // 0 or 1 matching pin, but we have to handle the possibility
                 // of more, as the database doesn't know we can only have one.
                 let matchingPins = try context.fetch(fetchRequest)
-                matchingPins.forEach { pin in context.delete(pin) }
+                try matchingPins.forEach { pin in
+                    let photoRequest = Photo.fetchRequest()
+                    photoRequest.predicate = NSPredicate(format: "pin == %@", pin)
+
+                    let pinPhotos = try context.fetch(photoRequest)
+                    pinPhotos.forEach { photo in context.delete(photo) }
+
+                    pin.photos = []
+                }
 
                 try context.save()
             }
