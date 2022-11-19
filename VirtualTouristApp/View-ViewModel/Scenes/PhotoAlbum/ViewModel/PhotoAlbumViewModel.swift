@@ -93,13 +93,15 @@ extension PhotoAlbumViewModel {
             fatalError("Not able to get photos")
         }
         let photo = photos[indexPath]
-        return PhotoCell(imageUrl: photo.url!)
+
+        return PhotoCell(imageUrl: photo.url ?? "")
     }
 
     func saveImages(imagesUrl: [String]) {
         do {
             try storageService.performContainerAction { container in
                 let context = container.viewContext
+                context.mergePolicy = NSMergePolicy.overwrite
 
                 for imageUrl in imagesUrl {
                     let newPhoto = Photo(context: context)
@@ -112,7 +114,7 @@ extension PhotoAlbumViewModel {
                 }
             }
         } catch {
-            print(error.localizedDescription)
+            print("Could not save changes:" + error.localizedDescription)
         }
     }
 
@@ -130,6 +132,7 @@ extension PhotoAlbumViewModel {
         do {
             try storageService.performContainerAction { container in
                 let context = container.viewContext
+                context.mergePolicy = NSMergePolicy.overwrite
 
                 // we get all pins matching the ID we have
                 let fetchRequest = Pin.fetchRequest()
@@ -146,13 +149,16 @@ extension PhotoAlbumViewModel {
                     let pinPhotos = try context.fetch(photoRequest)
                     pinPhotos.forEach { photo in context.delete(photo) }
 
-                    pin.photos = []
+                    if pin.photos != nil {
+                        pin.removeFromPhotos(pin.photos!)
+                    } else {
+                        print("Unable to clear photo album")
+                    }
                 }
-
                 try context.save()
             }
         } catch {
-            print("Could not delete \(error.localizedDescription)")
+            print("Could not delete due to: \(error.localizedDescription)")
         }
     }
 
@@ -163,6 +169,8 @@ extension PhotoAlbumViewModel {
             try storageService.performContainerAction { container in
 
                 let context = container.viewContext
+                context.mergePolicy = NSMergePolicy.overwrite
+
                 for index in indexPath {
                     context.delete(photos[index.item])
                 }
@@ -180,7 +188,8 @@ extension PhotoAlbumViewModel {
         do {
             try storageService.performContainerAction { container in
                 let context = container.viewContext
-
+                context.mergePolicy = NSMergePolicy.overwrite
+                
                 let pin = context.object(with: pinID) as! Pin
                 self.pin = pin
             }

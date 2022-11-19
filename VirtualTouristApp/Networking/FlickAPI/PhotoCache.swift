@@ -16,6 +16,7 @@ class PhotoCache {
     private init() {
         try! DataController.shared.performContainerAction { container in
             backgroundContext = container.newBackgroundContext()
+            backgroundContext.mergePolicy = NSMergePolicy.overwrite
         }
 
         operationQueue.maxConcurrentOperationCount = 3
@@ -80,6 +81,7 @@ private extension PhotoCache {
     func storeImage(urlString: String, data: Data) {
         try! DataController.shared.performContainerAction { container in
             let context = container.newBackgroundContext()
+            context.mergePolicy = NSMergePolicy.overwrite
 
             context.performAndWait {
                 let request: NSFetchRequest<Photo> = Photo.fetchRequest()
@@ -87,7 +89,7 @@ private extension PhotoCache {
                 let predicate = NSPredicate(format: "url = %@", urlString)
                 request.predicate = predicate
 
-                try! backgroundContext.fetch(request).forEach { photo in
+                try! context.fetch(request).forEach { photo in
                     photo.image = data
                 }
 
